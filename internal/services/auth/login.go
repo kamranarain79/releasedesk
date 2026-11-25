@@ -17,3 +17,11 @@ func (s *service) Login(username string, plainTextPassword string) (user.User, e
 
 	return userEntity, nil
 }
+
+func (s *service) GetUser(id int) (user.User, error) {
+	return s.userRepo.GetByID(id)
+}
+
+func (s *service) ListUsers() ([]user.User, error) {
+	return s.userRepo.Find()
+}

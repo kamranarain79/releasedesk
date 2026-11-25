@@ -1,0 +1,17 @@
+{{ define "content" }}
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl/7 font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight" translate="no">
+                {{.CurrentPage}}
+            </h2>
+        </div>
+    </div>
+    <div class="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
+        <p class="text-base font-medium text-gray-900">Not available in this build yet</p>
+        <p class="mt-2 text-sm text-gray-600">
+            The sidebar includes upcoming features from ReleaseDesk. This section has no backend in v1.0.0.
+            Use <a href="/dashboard/{{.AppSlug}}/releases" class="font-medium text-violet-900 hover:text-violet-800">Releases</a>,
+            platform <strong>Builds</strong>, and <strong>Overview</strong> for what is implemented today.
+        </p>
+    </div>
+{{ end }}

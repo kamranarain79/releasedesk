@@ -63,6 +63,21 @@ func (r *releaseRepository) FindByAppIDAndChannel(appID int, channelID int) ([]r
 	return releases, nil
 }
 
+func (r *releaseRepository) FindRecentByAppID(appID int, limit int) ([]release.BasicInfo, error) {
+	var releases []release.BasicInfo
+	err := r.engine.Table("release").Where("app_id = ?", appID).
+		Desc("created_at").
+		Limit(limit).
+		Find(&releases)
+	if err != nil {
+		return nil, err
+	}
+	for i := range releases {
+		releases[i].FormatAuditable()
+	}
+	return releases, nil
+}
+
 func (r *releaseRepository) GetByAppIDAndVersion(appID int, version string) (release.Release, error) {
 	var releaseSummary release.Release
 

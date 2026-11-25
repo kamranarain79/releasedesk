@@ -1,0 +1,44 @@
+{{ define "content" }}
+    <div class="space-y-6">
+        <p class="text-sm text-gray-600">
+            This is the signed-in account for this console. Editing profile details and changing passwords will land in a later version.
+        </p>
+
+        <dl class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+            <div class="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-gray-900">Username</dt>
+                <dd class="text-sm text-gray-700 sm:col-span-2" translate="no">{{.User.Username}}</dd>
+            </div>
+            <div class="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-gray-900">Name</dt>
+                <dd class="text-sm text-gray-700 sm:col-span-2">
+                    {{ if or .User.FirstName.Valid .User.LastName.Valid }}
+                        {{ if .User.FirstName.Valid }}{{.User.FirstName.String}}{{ end }}
+                        {{ if .User.LastName.Valid }}{{.User.LastName.String}}{{ end }}
+                    {{ else }}
+                        Not set
+                    {{ end }}
+                </dd>
+            </div>
+            <div class="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-gray-900">Email</dt>
+                <dd class="text-sm text-gray-700 sm:col-span-2">
+                    {{ if .User.Email.Valid }}{{.User.Email.String}}{{ else }}Not set{{ end }}
+                </dd>
+            </div>
+            <div class="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-gray-900">Role</dt>
+                <dd class="text-sm text-gray-700 sm:col-span-2">{{.User.Role.String}}</dd>
+            </div>
+        </dl>
+
+        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-8">
+            <p class="text-sm font-medium text-gray-900">Coming in a later version</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                <li>Update name and email</li>
+                <li>Change password</li>
+                <li>Personal access tokens</li>
+            </ul>
+        </div>
+    </div>
+{{ end }}

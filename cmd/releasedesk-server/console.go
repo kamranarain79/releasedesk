@@ -28,6 +28,10 @@ func buildConsole(container *dig.Container) *http.Server {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/homepage", http.StatusTemporaryRedirect)
 	})
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 
 	// Resolve dependencies and set up endpoints and views
 	err := container.Invoke(func(
@@ -54,7 +58,29 @@ func buildConsole(container *dig.Container) *http.Server {
 
 			// Private Views
 			r.Get("/homepage", miscCtrl.RenderHomepage)
+			r.Get("/portal", miscCtrl.RenderDownloadPortal)
+			r.Get("/people", miscCtrl.RenderPeople)
+			r.Get("/administration", miscCtrl.RenderAdministration)
+			r.Get("/account/settings", miscCtrl.RenderAccountSettings)
 			r.Get("/dashboard/{slug}", appCtrl.RenderDashboard)
+			r.Get("/dashboard/{slug}/distribution-groups", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Distribution Groups")
+			})
+			r.Get("/dashboard/{slug}/announcements", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Announcements")
+			})
+			r.Get("/dashboard/{slug}/feeds", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Feeds")
+			})
+			r.Get("/dashboard/{slug}/analytics", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Analytics")
+			})
+			r.Get("/dashboard/{slug}/settings", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Settings")
+			})
+			r.Get("/dashboard/{slug}/platforms/{platform}/configs", func(w http.ResponseWriter, r *http.Request) {
+				appCtrl.RenderStub(w, r, "Configurations")
+			})
 			r.Get("/dashboard/{slug}/releases", releaseCtrl.RenderReleaseList)
 			r.Get("/dashboard/{slug}/releases/{version}", releaseCtrl.RenderReleaseSummary)
 			r.Get("/dashboard/{slug}/releases/{version}/release-notes", releaseCtrl.RenderReleaseNotes)

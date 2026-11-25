@@ -10,6 +10,7 @@ import (
 type Service interface {
 	CreateRelease(slug values.Slug, info release.BasicInfo) (release.Release, error)
 	ListReleasesByChannel(appID int, channelID int) ([]release.BasicInfo, error)
+	ListRecentReleases(appID int, limit int) ([]release.BasicInfo, error)
 	GetReleaseSummary(appID int, version string) (release.Release, error)
 	GetReleaseChannels(appID int) ([]release.Channel, error)
 	SaveReleaseNotes(releaseID int, text string, changelogs []release.Changelog) (release.ReleaseNotes, error)

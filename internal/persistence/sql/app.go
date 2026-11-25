@@ -32,22 +32,25 @@ func (r *appRepository) Find() ([]app.App, error) {
 		return nil, err
 	}
 
-	for _, row := range apps {
-		row.FormatAuditable()
+	for i := range apps {
+		apps[i].FormatAuditable()
 	}
 
-	return apps, nil // Return the list of apps
+	return apps, nil
 }
 
 func (r *appRepository) GetBySlug(slug values.Slug) (app.App, error) {
 	var p app.App
 	p.Slug = slug
-	_, err := r.engine.Get(&p)
+	has, err := r.engine.Get(&p)
 	if err != nil {
 		return app.App{}, err
 	}
+	if !has {
+		return app.App{}, app.ErrAppNotFound
+	}
 
-	return p, err
+	return p, nil
 }
 
 func (r *appRepository) Update(app app.App) error {

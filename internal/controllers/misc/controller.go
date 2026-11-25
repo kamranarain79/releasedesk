@@ -1,22 +1,37 @@
 package misc
 
 import (
-	"github.com/brewbits-co/releasedesk/internal/services/app"
 	"net/http"
+	"os"
+
+	"github.com/brewbits-co/releasedesk/internal/services/app"
+	"github.com/brewbits-co/releasedesk/internal/services/auth"
 )
 
-// MiscController defines the interface for
+// MiscController renders organization-level console pages (navbar layout).
 type MiscController interface {
-	// RenderHomepage handles the rendering of the homepage by parsing the relevant HTML templates and writing them to the response.
 	RenderHomepage(w http.ResponseWriter, r *http.Request)
+	RenderDownloadPortal(w http.ResponseWriter, r *http.Request)
+	RenderPeople(w http.ResponseWriter, r *http.Request)
+	RenderAdministration(w http.ResponseWriter, r *http.Request)
+	RenderAccountSettings(w http.ResponseWriter, r *http.Request)
 }
 
-// NewMiscController creates a new instance of authController with the provided dependencies.
-func NewMiscController(service app.Service) MiscController {
-	return &miscController{service: service}
+func NewMiscController(appService app.Service, authService auth.Service) MiscController {
+	return &miscController{
+		appService:  appService,
+		authService: authService,
+	}
 }
 
-// miscController implements the auth.MiscController.
 type miscController struct {
-	service app.Service
+	appService  app.Service
+	authService auth.Service
+}
+
+func portalPublicURL() string {
+	if url := os.Getenv("RELEASEDESK_PORTAL_URL"); url != "" {
+		return url
+	}
+	return "http://localhost:9090"
 }

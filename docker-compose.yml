@@ -1,0 +1,19 @@
+services:
+  releasedesk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: releasedesk:1.0.0
+    container_name: releasedesk
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      RELEASEDESK_DATA_DIR: /app/_data
+      RELEASEDESK_PORTAL_URL: http://localhost:9090
+    volumes:
+      - releasedesk-data:/app/_data
+    restart: unless-stopped
+
+volumes:
+  releasedesk-data:

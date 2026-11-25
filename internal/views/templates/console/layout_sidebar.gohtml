@@ -1,8 +1,9 @@
 {{ define "body" }}
     {{- /*gotype: github.com/brewbits-co/releasedesk/pkg/session.CurrentAppData*/ -}}
     <div>
+        <input type="checkbox" id="mobile-sidebar-toggle" class="peer sr-only" />
         <!-- Off-canvas menu for mobile, show/hide based on off-canvas menu state. -->
-        <div class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
+        <div class="relative z-50 hidden peer-checked:block lg:!hidden" role="dialog" aria-modal="true">
             <!--
               Off-canvas menu backdrop, show/hide based on off-canvas menu state.
 
@@ -38,14 +39,14 @@
                         To: "opacity-0"
                     -->
                     <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
-                        <button type="button" class="-m-2.5 p-2.5">
+                        <label for="mobile-sidebar-toggle" class="-m-2.5 cursor-pointer p-2.5">
                             <span class="sr-only">Close sidebar</span>
                             <svg class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                  stroke="currentColor"
                                  aria-hidden="true" data-slot="icon">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
                             </svg>
-                        </button>
+                        </label>
                     </div>
 
                     <!-- Sidebar component, swap this element with another sidebar if you like -->
@@ -71,7 +72,7 @@
                                         <li>
                                             <!-- Current: "bg-violet-950 text-white", Default: "text-violet-200 hover:text-white hover:bg-violet-800" -->
                                             <a href="/dashboard/{{.AppSlug}}"
-                                               class="group flex gap-x-3 rounded-md bg-violet-950 p-2 text-sm/6 font-semibold text-white">
+                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "Overview"}}bg-violet-950 text-white{{else}}text-violet-200 hover:text-white hover:bg-violet-800{{end}}">
                                                 <svg class="size-6 shrink-0 text-white" fill="none" viewBox="0 0 24 24"
                                                      stroke-width="1.5"
                                                      stroke="currentColor" aria-hidden="true" data-slot="icon">
@@ -82,8 +83,8 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="/dashboard/{{.AppSlug}}/feeds"
-                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-violet-200 hover:bg-violet-800 hover:text-white">
+                                            <a href="/dashboard/{{.AppSlug}}/releases"
+                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "Releases"}}bg-violet-950 text-white{{else}}text-violet-200 hover:bg-violet-800 hover:text-white{{end}}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                                      fill="currentColor" class="size-6">
                                                     <path fill-rule="evenodd"
@@ -146,28 +147,11 @@
                                 <li>
                                     <div class="text-sm/6 font-semibold text-violet-200">Platforms</div>
                                     <ul role="list" class="-mx-2 mt-2 space-y-1">
-                                        <li>
-                                            <!-- Current: "bg-violet-950 text-white", Default: "text-violet-200 hover:text-white hover:bg-violet-800" -->
-                                            <a href="#"
-                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-violet-200 hover:bg-violet-800 hover:text-white">
-                                                <span class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-violet-700 bg-violet-800 text-[0.625rem] font-medium text-white">H</span>
-                                                <span class="truncate">Heroicons</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#"
-                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-violet-200 hover:bg-violet-800 hover:text-white">
-                                                <span class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-violet-700 bg-violet-800 text-[0.625rem] font-medium text-white">T</span>
-                                                <span class="truncate">Tailwind Labs</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#"
-                                               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-violet-200 hover:bg-violet-800 hover:text-white">
-                                                <span class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-violet-700 bg-violet-800 text-[0.625rem] font-medium text-white">W</span>
-                                                <span class="truncate">Workcation</span>
-                                            </a>
-                                        </li>
+                                        {{- range .Platforms }}
+                                            {{template "platform-menu-item" . }}
+                                        {{else}}
+                                        <li class="px-2 py-1 text-sm text-violet-200">No platforms yet</li>
+                                        {{end}}
                                     </ul>
                                 </li>
                                 <li class="mt-auto">
@@ -306,14 +290,14 @@
         <!-- Navbar -->
         <div class="lg:pl-72">
             <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-                <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden">
+                <label for="mobile-sidebar-toggle" class="-m-2.5 cursor-pointer p-2.5 text-gray-700 lg:hidden">
                     <span class="sr-only">Open sidebar</span>
                     <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
                          aria-hidden="true" data-slot="icon">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
                     </svg>
-                </button>
+                </label>
 
                 <!-- Separator -->
                 <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true"></div>
@@ -354,7 +338,7 @@
                                  role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button"
                                  tabindex="-1">
                                 <!-- Active: "bg-gray-50 outline-none", Not Active: "" -->
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:outline-none" role="menuitem"
+                                <a href="/account/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:outline-none" role="menuitem"
                                    tabindex="-1"
                                    id="user-menu-item-0">Account Settings</a>
                                 <form action="/internal/logout" method="POST">

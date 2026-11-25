@@ -1,8 +1,20 @@
-build:
-	go build -o _build/main.exe cmd/release-server/main.go
+.PHONY: web build run docker docker-up docker-down
 
-server:
-	air
+web:
+	cd web && npm install && npm run build
 
-ui:
-	cd web && npm run dev
+build: web
+	mkdir -p _tmp _data
+	go build -o _tmp/releasedesk-server ./cmd/releasedesk-server
+
+run: build
+	./_tmp/releasedesk-server
+
+docker:
+	docker compose build
+
+docker-up:
+	docker compose up --build -d
+
+docker-down:
+	docker compose down

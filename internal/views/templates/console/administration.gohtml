@@ -1,0 +1,28 @@
+{{ define "content" }}
+    <div class="space-y-6">
+        <p class="text-sm text-gray-600">
+            Organization administration is the boundary for members, tokens, email, and backups in the hosted product.
+            Those controls are not wired in v1.0.0 yet; this page is the placeholder so later versions can land here without changing the navbar.
+        </p>
+
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="rounded-lg border border-gray-200 p-4">
+                <dt class="text-sm font-medium text-gray-900">Instance</dt>
+                <dd class="mt-1 text-sm text-gray-600">SQLite at the configured data directory. Default login is the seeded <span translate="no">admin</span> user.</dd>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-4">
+                <dt class="text-sm font-medium text-gray-900">Available now</dt>
+                <dd class="mt-1 text-sm text-gray-600">Applications, setup guide, releases, builds, and the public portal stub.</dd>
+            </div>
+        </dl>
+
+        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-8">
+            <p class="text-sm font-medium text-gray-900">Coming in a later version</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                <li>Organization profile, branding, and custom domains</li>
+                <li>Outgoing email and background jobs</li>
+                <li>API tokens, backups, and store connections (Google Play, App Store Connect)</li>
+            </ul>
+        </div>
+    </div>
+{{ end }}

@@ -1,0 +1,52 @@
+{{ define "content" }}
+    <div class="space-y-6">
+        <p class="text-sm text-gray-600">
+            People on this instance can sign in to the console. Inviting members, testers, and per-app roles will land in a later version.
+        </p>
+
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-700 sm:pl-6">Username</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Name</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Email</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Role</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                {{- range .Users }}
+                    <tr>
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6" translate="no">{{.Username}}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {{ if or .FirstName.Valid .LastName.Valid }}
+                                {{ if .FirstName.Valid }}{{.FirstName.String}}{{ end }}
+                                {{ if .LastName.Valid }}{{.LastName.String}}{{ end }}
+                            {{ else }}
+                                —
+                            {{ end }}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {{ if .Email.Valid }}{{.Email.String}}{{ else }}—{{ end }}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{.Role.String}}</td>
+                    </tr>
+                {{ else }}
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500">No users found.</td>
+                    </tr>
+                {{- end }}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-8">
+            <p class="text-sm font-medium text-gray-900">Coming in a later version</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                <li>Invite members and testers by email</li>
+                <li>Per-application access and distribution groups</li>
+                <li>API tokens scoped to a person or service account</li>
+            </ul>
+        </div>
+    </div>
+{{ end }}

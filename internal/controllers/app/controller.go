@@ -1,27 +1,33 @@
 package app
 
 import (
-	"github.com/brewbits-co/releasedesk/internal/services/app"
-	"github.com/brewbits-co/releasedesk/internal/services/platform"
 	"net/http"
+
+	"github.com/brewbits-co/releasedesk/internal/services/app"
+	"github.com/brewbits-co/releasedesk/internal/services/build"
+	"github.com/brewbits-co/releasedesk/internal/services/platform"
+	"github.com/brewbits-co/releasedesk/internal/services/release"
 )
 
 type AppController interface {
 	HandleCreateApp(w http.ResponseWriter, r *http.Request)
 	HandleAppSetupGuide(w http.ResponseWriter, r *http.Request)
 	RenderDashboard(w http.ResponseWriter, r *http.Request)
+	RenderStub(w http.ResponseWriter, r *http.Request, currentPage string)
 }
 
-// NewAppController creates a new instance of appController with the provided dependencies.
-func NewAppController(service app.Service, platformService platform.Service) AppController {
+func NewAppController(service app.Service, platformService platform.Service, releaseService release.Service, buildService build.Service) AppController {
 	return &appController{
 		service:         service,
 		platformService: platformService,
+		releaseService:  releaseService,
+		buildService:    buildService,
 	}
 }
 
-// appController implements the app.AppController.
 type appController struct {
 	service         app.Service
 	platformService platform.Service
+	releaseService  release.Service
+	buildService    build.Service
 }

@@ -29,3 +29,23 @@ With **ReleaseDesk**, you can:
 
 > 🚧 This project is in its early stages.  
 Share your ideas or questions on [Discussions](https://github.com/brewbits-co/releasedesk/discussions) page.
+
+## Local development
+
+**Docker** (pins Go 1.23 and Node 22, embeds a matching UI bundle):
+
+```bash
+docker compose up --build
+```
+
+Or with a host toolchain (Go **1.23+** and Node **22**):
+
+```bash
+make build && make run
+```
+
+Open **http://localhost:8080/login** (default: `admin` / `admin`).  
+Public portal: **http://localhost:9090**.
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for Air, troubleshooting, and which console pages are implemented vs placeholders.  
+Hosted product documentation: [releasedesk.dev/docs](https://releasedesk.dev/docs/).

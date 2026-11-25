@@ -23,6 +23,8 @@ type Service interface {
 	GetAppOverview(slug values.Slug) (app.Overview, error)
 	// GetCurrentAppData retrieves application information shared across views based on the provided slug.
 	GetCurrentAppData(slug values.Slug) (session.CurrentAppData, error)
+	// GetPublicApps returns apps that are visible on the download portal.
+	GetPublicApps() ([]app.App, error)
 }
 
 // NewAppService initializes a new instance of the application Service using the provided dependencies.

@@ -20,6 +20,10 @@ func (s *service) ListReleasesByChannel(appID int, channelID int) ([]release.Bas
 	return releases, nil
 }
 
+func (s *service) ListRecentReleases(appID int, limit int) ([]release.BasicInfo, error) {
+	return s.releaseRepo.FindRecentByAppID(appID, limit)
+}
+
 func (s *service) GetReleaseSummary(appID int, version string) (release.Release, error) {
 	releaseEntity, err := s.releaseRepo.GetByAppIDAndVersion(appID, version)
 	if err != nil {

@@ -8,6 +8,7 @@ type ReleaseRepository interface {
 	Save(release *Release) error
 	Update(release *Release) error
 	FindByAppIDAndChannel(appID int, channelID int) ([]BasicInfo, error)
+	FindRecentByAppID(appID int, limit int) ([]BasicInfo, error)
 	FindChannelsByAppID(appID int) ([]Channel, error)
 	GetByAppIDAndVersion(appID int, version string) (Release, error)
 	GetByID(id int) (Release, error)

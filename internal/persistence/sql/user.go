@@ -41,3 +41,15 @@ func (r *userRepository) GetByUsername(username string) (user.User, error) {
 
 	return userEntity, nil
 }
+
+func (r *userRepository) Find() ([]user.User, error) {
+	var users []user.User
+	err := r.engine.Find(&users)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		users[i].FormatAuditable()
+	}
+	return users, nil
+}

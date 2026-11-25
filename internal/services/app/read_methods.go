@@ -14,12 +14,27 @@ func (s *service) GetUserAccessibleApps(userID int) ([]app.App, error) {
 	}
 
 	for i := range applications {
-		if s.appRepo.GetPlatformAvailability(&applications[i]) != nil {
-			return nil, err
+		if availErr := s.appRepo.GetPlatformAvailability(&applications[i]); availErr != nil {
+			return nil, availErr
 		}
 	}
 
 	return applications, nil
+}
+
+func (s *service) GetPublicApps() ([]app.App, error) {
+	applications, err := s.GetUserAccessibleApps(0)
+	if err != nil {
+		return nil, err
+	}
+
+	publicApps := make([]app.App, 0, len(applications))
+	for _, application := range applications {
+		if !application.Private {
+			publicApps = append(publicApps, application)
+		}
+	}
+	return publicApps, nil
 }
 
 func (s *service) GetAppOverview(slug values.Slug) (app.Overview, error) {
