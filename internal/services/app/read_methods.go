@@ -13,6 +13,24 @@ func (s *service) GetUserAccessibleApps(userID int) ([]app.App, error) {
 		return nil, err
 	}
 
+	if userID != 0 && !s.IsInstanceAdmin(userID) {
+		members, memErr := s.memberRepo.ListByUser(userID)
+		if memErr != nil {
+			return nil, memErr
+		}
+		allowed := map[int]bool{}
+		for _, member := range members {
+			allowed[member.AppID] = true
+		}
+		filtered := make([]app.App, 0, len(members))
+		for _, application := range applications {
+			if allowed[application.ID] {
+				filtered = append(filtered, application)
+			}
+		}
+		applications = filtered
+	}
+
 	for i := range applications {
 		if availErr := s.appRepo.GetPlatformAvailability(&applications[i]); availErr != nil {
 			return nil, availErr

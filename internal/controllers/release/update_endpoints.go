@@ -1,53 +1,71 @@
 package release
 
 import (
-	"github.com/brewbits-co/releasedesk/internal/domains/release"
-	"github.com/brewbits-co/releasedesk/pkg/schemas"
-	"github.com/brewbits-co/releasedesk/pkg/utils"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"net/http"
 	"strconv"
+
+	"github.com/brewbits-co/releasedesk/pkg/schemas"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
-// HandleUpdateBasicInfo handles the update of a release's BasicInfo
-// Only the TargetChannel and Status fields can be updated
+// HandleUpdateBasicInfo rejects changes to channel and status.
+// Those are chosen when the release is created.
 func (c *releaseController) HandleUpdateBasicInfo(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.PlainText(w, r, err.Error())
-		return
-	}
+	render.Status(r, http.StatusConflict)
+	render.JSON(w, r, schemas.NewErrorResponse("The channel and status are fixed when the release is created", []string{}))
+}
 
-	// Extract the release ID from the URL
+func (c *releaseController) HandlePublishRelease(w http.ResponseWriter, r *http.Request) {
 	releaseID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, schemas.NewErrorResponse("Invalid release ID", []string{err.Error()}))
+		http.NotFound(w, r)
 		return
 	}
-
-	var updateRequest release.BasicInfo
-	updateRequest.ID = releaseID
-
-	err = utils.NewDecoder().Decode(&updateRequest, r.Form)
+	rel, err := c.service.GetReleaseByID(releaseID)
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.PlainText(w, r, err.Error())
+		http.NotFound(w, r)
 		return
 	}
-
-	_, err = c.service.UpdateReleaseBasicInfo(updateRequest)
+	application, err := c.appService.GetByID(rel.AppID)
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.JSON(w, r, schemas.NewErrorResponse("Failed to update release", []string{err.Error()}))
+		http.NotFound(w, r)
 		return
 	}
+	if !c.canEdit(r, string(application.Slug)) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	if err = c.service.PublishRelease(releaseID, c.actor(r)); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/dashboard/"+string(application.Slug)+"/releases/"+rel.Version, http.StatusSeeOther)
+}
 
-	// Return a 200 OK status
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, map[string]interface{}{
-		"success": true,
-	})
+func (c *releaseController) HandleDeleteRelease(w http.ResponseWriter, r *http.Request) {
+	releaseID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	rel, err := c.service.GetReleaseByID(releaseID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	application, err := c.appService.GetByID(rel.AppID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if !c.canEdit(r, string(application.Slug)) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	if err = c.service.DeleteRelease(releaseID, c.actor(r)); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/dashboard/"+string(application.Slug)+"/releases", http.StatusSeeOther)
 }

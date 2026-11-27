@@ -26,3 +26,7 @@ func (s *service) UpdateReleaseBasicInfo(info release.BasicInfo) (release.Releas
 
 	return existingRelease, nil
 }
+
+func (s *service) ReplaceLinks(releaseID int, links []release.LinkedBuilds) error {
+	return s.releaseRepo.ReplaceLinks(releaseID, links)
+}

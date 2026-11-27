@@ -1,7 +1,9 @@
 package release
 
 import (
+	"github.com/brewbits-co/releasedesk/internal/domains/audit"
 	"github.com/brewbits-co/releasedesk/internal/domains/release"
+	"github.com/brewbits-co/releasedesk/internal/domains/user"
 	"github.com/brewbits-co/releasedesk/pkg/session"
 )
 
@@ -12,6 +14,19 @@ type ReleaseListData struct {
 	Releases         []release.BasicInfo
 	Channels         []release.Channel
 	CurrentChannelID int
+	AvailableBuilds  []ReleaseBinary
+	CanEdit          bool
+	Directory        user.Directory
+}
+
+type ReleaseBinary struct {
+	BuildID  int
+	OS       string
+	Number   string
+	Version  string
+	Files    string
+	Checksum string
+	Included bool
 }
 
 type ReleaseSummaryData struct {
@@ -19,7 +34,14 @@ type ReleaseSummaryData struct {
 	session.SessionData
 	session.CurrentAppData
 	release.Release
-	Channels []release.Channel
+	Channels      []release.Channel
+	DownloadCount int64
+	CanEdit       bool
+	Binaries      []ReleaseBinary
+	Audit         []audit.Event
+	Creator       user.Person
+	Editor        user.Person
+	HasEditor     bool
 }
 
 type ReleaseNotesData struct {
@@ -28,6 +50,8 @@ type ReleaseNotesData struct {
 	session.CurrentAppData
 	Release      release.Release
 	ReleaseNotes release.ReleaseNotes
+	CanEdit      bool
+	Editing      bool
 }
 
 type TestMethodsData struct {
@@ -36,4 +60,6 @@ type TestMethodsData struct {
 	session.CurrentAppData
 	Release  release.Release
 	TestPlan release.TestPlan
+	CanEdit  bool
+	Editing  bool
 }

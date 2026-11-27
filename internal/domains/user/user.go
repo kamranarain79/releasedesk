@@ -51,6 +51,8 @@ type User struct {
 	LastName sql.NullString
 	// Role represents the user's role in the system.
 	Role values.Role `xorm:"not null"`
+	// MustChangePassword is set on the seeded admin until the password is replaced.
+	MustChangePassword bool `xorm:"not null default false" json:"mustChangePassword"`
 }
 
 // IsValid checks if the current user information follows the pre-defined business rules

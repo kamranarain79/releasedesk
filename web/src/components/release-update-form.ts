@@ -104,18 +104,10 @@ export class ReleaseUpdateForm extends LitElement {
           <fieldset>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               ${radioOption('BuildSelection', 'Last', 'Last', 'Always use the latest build.', this.buildSelection === 'Last', this.handleBuildSelectionChange)}
-              ${radioOption('BuildSelection', 'Manual', 'Manual', 'Select builds manually.', this.buildSelection === 'Manual', this.handleBuildSelectionChange)}
+              ${radioOption('BuildSelection', 'Manual', 'Manual', 'Use only the binaries pinned in the list above.', this.buildSelection === 'Manual', this.handleBuildSelectionChange)}
             </div>
           </fieldset>
         </div>
-          
-        ${this.buildSelection === 'Manual' ? html`
-          <div class="col-span-full mt-4">
-            <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
-              
-            </div>
-          </div>
-        ` : ''}
 
         <div class="mt-6 flex items-center justify-end gap-x-6">
           <button type="submit" class="rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">

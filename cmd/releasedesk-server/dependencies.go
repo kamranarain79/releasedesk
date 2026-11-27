@@ -11,8 +11,10 @@ import (
 	releaseCtrl "github.com/brewbits-co/releasedesk/internal/controllers/release"
 	"github.com/brewbits-co/releasedesk/internal/persistence/sql"
 	"github.com/brewbits-co/releasedesk/internal/services/app"
+	auditsvc "github.com/brewbits-co/releasedesk/internal/services/audit"
 	"github.com/brewbits-co/releasedesk/internal/services/auth"
 	"github.com/brewbits-co/releasedesk/internal/services/build"
+	"github.com/brewbits-co/releasedesk/internal/services/instance"
 	"github.com/brewbits-co/releasedesk/internal/services/platform"
 	"github.com/brewbits-co/releasedesk/internal/services/release"
 	"go.uber.org/dig"
@@ -37,7 +39,17 @@ func buildContainer() *dig.Container {
 	container.Provide(sql.NewReleaseRepository)
 	container.Provide(sql.NewReleaseNotesRepository)
 	container.Provide(sql.NewTestMethodRepository)
+	container.Provide(sql.NewMemberRepository)
+	container.Provide(sql.NewCITokenRepository)
+	container.Provide(sql.NewGroupRepository)
+	container.Provide(sql.NewAnnouncementRepository)
+	container.Provide(sql.NewPlatformConfigRepository)
+	container.Provide(sql.NewDownloadRepository)
+	container.Provide(sql.NewInstanceRepository)
+	container.Provide(sql.NewAuditRepository)
 	// Services
+	container.Provide(auditsvc.NewService)
+	container.Provide(instance.NewService)
 	container.Provide(auth.NewAuthService)
 	container.Provide(app.NewAppService)
 	container.Provide(platform.NewPlatformService)

@@ -42,6 +42,23 @@ func (r *userRepository) GetByUsername(username string) (user.User, error) {
 	return userEntity, nil
 }
 
+func (r *userRepository) Save(userEntity *user.User) error {
+	_, err := r.engine.Insert(userEntity)
+	return err
+}
+
+func (r *userRepository) UpdatePassword(id int, hash string, mustChange bool) error {
+	table := r.engine.Quote("user")
+	_, err := r.engine.Exec("UPDATE "+table+" SET password = ?, must_change_password = ? WHERE id = ?", hash, mustChange, id)
+	return err
+}
+
+func (r *userRepository) UpdateProfile(id int, firstName, lastName, email string) error {
+	table := r.engine.Quote("user")
+	_, err := r.engine.Exec("UPDATE "+table+" SET first_name = ?, last_name = ?, email = ? WHERE id = ?", firstName, lastName, email, id)
+	return err
+}
+
 func (r *userRepository) Find() ([]user.User, error) {
 	var users []user.User
 	err := r.engine.Find(&users)

@@ -1,0 +1,43 @@
+# Include from a firmware or app repository.
+# Variables (masked + protected): RELEASEDESK_URL, RELEASEDESK_APP_SLUG, RELEASEDESK_APP_TOKEN
+# Optional file paths: ESP32_FIRMWARE, ESP32_BOOTLOADER, ESP32_PARTITION, ESP32_APP, STM32_HEX, RAUC_BUNDLE
+
+stages:
+  - publish
+
+push_releasedesk:
+  stage: publish
+  image: curlimages/curl:8.11.1
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - test -n "$RELEASEDESK_URL" && test -n "$RELEASEDESK_APP_SLUG" && test -n "$RELEASEDESK_APP_TOKEN"
+    - |
+      curl --fail-with-body -X POST "$RELEASEDESK_URL/api/v1/apps/$RELEASEDESK_APP_SLUG/releases" \
+        -H "Authorization: Bearer $RELEASEDESK_APP_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"version\":\"$CI_COMMIT_TAG\",\"channel\":\"Stable\"}" || true
+    - |
+      if [ -n "$ESP32_FIRMWARE" ]; then
+        curl --fail-with-body -X POST "$RELEASEDESK_URL/api/apps/$RELEASEDESK_APP_SLUG/platforms/ESP32/builds" \
+          -H "Authorization: Bearer $RELEASEDESK_APP_TOKEN" \
+          -F "Number=$CI_PIPELINE_IID" -F "Version=$CI_COMMIT_TAG" -F "overwrite=true" \
+          -F "File_firmware=@${ESP32_FIRMWARE}" \
+          ${ESP32_BOOTLOADER:+-F "File_bootloader=@${ESP32_BOOTLOADER}"} \
+          ${ESP32_PARTITION:+-F "File_partition=@${ESP32_PARTITION}"} \
+          ${ESP32_APP:+-F "File_application=@${ESP32_APP}"}
+      fi
+    - |
+      if [ -n "$STM32_HEX" ]; then
+        curl --fail-with-body -X POST "$RELEASEDESK_URL/api/apps/$RELEASEDESK_APP_SLUG/platforms/STM32/builds" \
+          -H "Authorization: Bearer $RELEASEDESK_APP_TOKEN" \
+          -F "Number=$CI_PIPELINE_IID" -F "Version=$CI_COMMIT_TAG" -F "overwrite=true" \
+          -F "File_hex=@${STM32_HEX}"
+      fi
+    - |
+      if [ -n "$RAUC_BUNDLE" ]; then
+        curl --fail-with-body -X POST "$RELEASEDESK_URL/api/apps/$RELEASEDESK_APP_SLUG/platforms/Linux/builds" \
+          -H "Authorization: Bearer $RELEASEDESK_APP_TOKEN" \
+          -F "Number=$CI_PIPELINE_IID" -F "Version=$CI_COMMIT_TAG" -F "overwrite=true" \
+          -F "File_rauc=@${RAUC_BUNDLE}"
+      fi

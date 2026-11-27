@@ -2,9 +2,11 @@ package session
 
 import (
 	"errors"
-	"github.com/lestrrat-go/jwx/v2/jwt"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
 // sessionCookieName is the name of the HTTP cookie used to store the session's JWT token.
@@ -18,6 +20,8 @@ func CreateLoginCookie(tokenString string) http.Cookie {
 		Path:     "/",
 		Expires:  time.Now().Add(sessionDuration),
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   os.Getenv("RELEASEDESK_COOKIE_SECURE") == "1",
 	}
 	return cookie
 }
@@ -30,6 +34,8 @@ func CreateLogoutCookie() http.Cookie {
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   os.Getenv("RELEASEDESK_COOKIE_SECURE") == "1",
 		MaxAge:   -1,
 	}
 	return cookie

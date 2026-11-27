@@ -6,6 +6,7 @@ import (
 
 	"github.com/brewbits-co/releasedesk/internal/services/app"
 	"github.com/brewbits-co/releasedesk/internal/services/auth"
+	"github.com/brewbits-co/releasedesk/internal/services/instance"
 )
 
 // MiscController renders organization-level console pages (navbar layout).
@@ -15,18 +16,28 @@ type MiscController interface {
 	RenderPeople(w http.ResponseWriter, r *http.Request)
 	RenderAdministration(w http.ResponseWriter, r *http.Request)
 	RenderAccountSettings(w http.ResponseWriter, r *http.Request)
+	HandleCreateUser(w http.ResponseWriter, r *http.Request)
+	HandleChangePassword(w http.ResponseWriter, r *http.Request)
+	HandleSMTP(w http.ResponseWriter, r *http.Request)
+	HandleRegenerateToken(w http.ResponseWriter, r *http.Request)
+	HandleDismissToken(w http.ResponseWriter, r *http.Request)
+	HandleBranding(w http.ResponseWriter, r *http.Request)
+	HandleProfile(w http.ResponseWriter, r *http.Request)
+	HandleAvatar(w http.ResponseWriter, r *http.Request)
 }
 
-func NewMiscController(appService app.Service, authService auth.Service) MiscController {
+func NewMiscController(appService app.Service, authService auth.Service, instanceService instance.Service) MiscController {
 	return &miscController{
-		appService:  appService,
-		authService: authService,
+		appService:      appService,
+		authService:     authService,
+		instanceService: instanceService,
 	}
 }
 
 type miscController struct {
-	appService  app.Service
-	authService auth.Service
+	appService      app.Service
+	authService     auth.Service
+	instanceService instance.Service
 }
 
 func portalPublicURL() string {

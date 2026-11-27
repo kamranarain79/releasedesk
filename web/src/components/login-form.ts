@@ -24,12 +24,13 @@ export class LoginForm extends LitElement {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-    }).then(response => {
+    }).then(async response => {
       if (!response.ok) {
         this.loginFailed = true;
-      } else {
-        window.location.href = '/homepage';
+        return;
       }
+      const body = await response.json().catch(() => ({}));
+      window.location.href = body.mustChangePassword ? '/account/settings' : '/homepage';
     });
   }
 

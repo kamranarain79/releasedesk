@@ -7,6 +7,18 @@
                     Release {{.Release.BasicInfo.Version}}
                 </h3>
             </div>
+            {{ if .CanEdit }}
+                <div class="mt-3 flex gap-2 md:mt-0">
+                    {{ if eq .Release.Status "Unpublished" }}
+                        <form method="POST" action="/internal/releases/{{.Release.ID}}/publish">
+                            <button class="rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white" type="submit">Publish</button>
+                        </form>
+                    {{ end }}
+                    <form method="POST" action="/internal/releases/{{.Release.ID}}/delete" onsubmit="return confirm('Delete this release? Uploaded binaries stay on the platform.')">
+                        <button class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-200" type="submit">Delete</button>
+                    </form>
+                </div>
+            {{ end }}
         </div>
         <div class="mt-4">
             <nav class="-mb-px flex space-x-8">
@@ -33,7 +45,7 @@
                 <div class="py-4 px-4">
                     <p class="text-sm/6 font-medium text-gray-400">Number of Downloads</p>
                     <p class="mt-2 flex items-baseline gap-x-2">
-                        <span class="text-xl font-semibold tracking-tight text-violet-900">0</span>
+                        <span class="text-xl font-semibold tracking-tight text-violet-900">{{.DownloadCount}}</span>
                     </p>
                 </div>
                 <div class="py-4 px-4">
@@ -51,12 +63,53 @@
             </div>
         </div>
 
-        <release-update-form
-            releaseID="{{.Release.BasicInfo.ID}}"
-            targetChannel="{{.Release.BasicInfo.TargetChannel}}"
-            status="{{.Release.BasicInfo.Status}}"
-            buildSelection="{{.Release.BasicInfo.BuildSelection}}"
-            channels="{{json .Channels}}">
-        </release-update-form>
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            <dl class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Channel</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900">
+                        {{ range .Channels }}{{ if eq .ID $.Release.TargetChannel }}{{ .Name }}{{ end }}{{ end }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Status</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900">{{ .Release.Status }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Created by</dt>
+                    <dd class="mt-1">{{ template "person" .Creator }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Last edited</dt>
+                    <dd class="mt-1">{{ if .HasEditor }}{{ template "person" .Editor }}{{ else }}<span class="text-sm text-gray-400">—</span>{{ end }}</dd>
+                </div>
+            </dl>
+            <p class="mt-3 text-sm text-gray-600">The channel and the binaries are chosen when the release is created and stay fixed.</p>
+        </div>
+
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            <h4 class="text-base font-semibold text-gray-900">Binaries</h4>
+            {{ if eq .Release.BuildSelection "Last" }}
+                <p class="mt-1 text-sm text-gray-600">Builds uploaded with version {{.Release.Version}} are part of this release.</p>
+            {{ else }}
+                <p class="mt-1 text-sm text-gray-600">These binaries were pinned when the release was created.</p>
+            {{ end }}
+            <ul class="mt-4 divide-y divide-gray-200 rounded-md border border-gray-200">
+                {{ range .Binaries }}
+                    {{ if .Included }}
+                        <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                            <span><span class="font-medium text-gray-900">{{.OS}}</span> #{{.Number}} <span class="text-gray-500">{{.Version}}</span> — {{.Files}}</span>
+                            {{ if .Checksum }}<a class="text-violet-800" href="/internal/artifacts/{{.Checksum}}">Download</a>{{ end }}
+                        </li>
+                    {{ end }}
+                {{ else }}
+                    <li class="px-4 py-6 text-sm text-gray-500">No binaries are part of this release yet.</li>
+                {{ end }}
+            </ul>
+        </div>
+
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            {{ template "audit-log" .Audit }}
+        </div>
     </div>
 {{ end }}

@@ -22,12 +22,29 @@ type DownloadPortalData struct {
 type PeoplePageData struct {
 	session.SessionData
 	CurrentPage string
+	IsAdmin     bool
 	Users       []user.User
+	Apps        []app.App
 }
 
 type AdministrationData struct {
 	session.SessionData
-	CurrentPage string
+	CurrentPage     string
+	IsAdmin         bool
+	DataDir         string
+	Database        string
+	DatabaseNote    string
+	SMTPHost        string
+	SMTPPort        string
+	SMTPUser        string
+	SMTPFrom        string
+	SMTPPasswordSet bool
+	TokenPrefix     string
+	TokenPending    string
+	EnvToken        bool
+	Section         string
+	HasLogo         bool
+	HasFavicon      bool
 }
 
 type AccountSettingsData struct {

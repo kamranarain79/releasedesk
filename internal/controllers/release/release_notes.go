@@ -27,6 +27,9 @@ func (c *releaseController) HandleSaveReleaseNotes(w http.ResponseWriter, r *htt
 		render.JSON(w, r, schemas.NewErrorResponse("Invalid release ID", nil))
 		return
 	}
+	if !c.allowContentEdit(w, r, releaseID) {
+		return
+	}
 
 	// Get the release notes text from the form
 	releaseNotesText := r.Form.Get("release-notes")
@@ -80,13 +83,12 @@ func (c *releaseController) HandleSaveReleaseNotes(w http.ResponseWriter, r *htt
 	}
 
 	// Save the release notes and changelogs
-	_, err = c.service.SaveReleaseNotes(releaseID, releaseNotesText, changelogs)
+	_, err = c.service.SaveReleaseNotes(releaseID, releaseNotesText, changelogs, c.actor(r))
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, schemas.NewErrorResponse("Failed to save release notes", []string{err.Error()}))
 		return
 	}
 
-	// Redirect to the release notes page
-	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+	c.redirectToRelease(w, r, releaseID, "/release-notes")
 }

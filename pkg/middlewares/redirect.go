@@ -26,12 +26,14 @@ func RedirectOnUnauthorized(ja *jwtauth.JWTAuth) func(http.Handler) http.Handler
 			if err != nil {
 				log.Println(err)
 				handleUnauthorized(w, r)
+				return
 			}
 
 			sessionCtx, err := session.CreateSessionContext(r.Context(), token)
 			if err != nil {
 				log.Println(err)
 				handleUnauthorized(w, r)
+				return
 			}
 
 			// Token is authenticated, pass it through

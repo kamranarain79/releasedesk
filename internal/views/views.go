@@ -4,6 +4,8 @@ import (
 	"embed"
 	"encoding/json"
 	"html/template"
+
+	"github.com/brewbits-co/releasedesk/pkg/markdown"
 )
 
 // ViewsFS Include the template file in the binary
@@ -36,6 +38,9 @@ func ParseTemplate(layout Layout, templates ...string) (*template.Template, erro
 		"json": func(v interface{}) (string, error) {
 			bytes, err := json.Marshal(v)
 			return string(bytes), err
+		},
+		"markdown": func(src string) template.HTML {
+			return template.HTML(markdown.Render(src))
 		},
 	}).ParseFS(ViewsFS, templates...)
 	if err != nil {

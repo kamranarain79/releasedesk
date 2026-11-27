@@ -12,8 +12,11 @@ type ReleaseRepository interface {
 	FindChannelsByAppID(appID int) ([]Channel, error)
 	GetByAppIDAndVersion(appID int, version string) (Release, error)
 	GetByID(id int) (Release, error)
+	SetStatus(id int, status ReleaseStatus) error
+	Delete(id int) error
 	LinkBuild(releaseID int, buildID int, os values.OS) error
 	UnlinkBuild(releaseID int, buildID int, os values.OS) error
+	ReplaceLinks(releaseID int, links []LinkedBuilds) error
 }
 
 type ReleaseNotesRepository interface {

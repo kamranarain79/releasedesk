@@ -13,5 +13,6 @@ func CreateSessionContext(ctx context.Context, token jwt.Token) (context.Context
 	}
 	ctx = context.WithValue(ctx, "userID", userID)
 	ctx = context.WithValue(ctx, "username", username)
+	ctx = context.WithValue(ctx, "actor", username)
 	return ctx, nil
 }

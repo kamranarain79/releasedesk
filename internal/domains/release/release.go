@@ -49,6 +49,8 @@ type BasicInfo struct {
 	BuildSelection BuildSelection `xorm:"not null default 'Last'"`
 	// QANotes is the overview of how QA should test this release.
 	QANotes string `xorm:"longtext qa_notes"`
+	// CreatedBy is a username or ci:<token-prefix>.
+	CreatedBy string `xorm:"varchar(100)" json:"createdBy"`
 }
 
 // LinkedBuilds represents the relationship between a Release and a Build

@@ -1,12 +1,28 @@
 package storage
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"regexp"
+)
 
-// ConvertChecksumToPath generates a storage path for a file based on its checksum with a two-character subdirectory.
-// Example: If the StorageDir is "/data/storage" and the checksum is "abcdef123456",
-// the resulting path will be "/data/storage/ab/abcdef123456".
+// Root is the artifact directory. SetRoot points it at RELEASEDESK_DATA_DIR/storage.
+var Root = filepath.Join("_data", "storage")
+
+func SetRoot(dataDir string) {
+	if dataDir == "" {
+		dataDir = "_data"
+	}
+	Root = filepath.Join(dataDir, "storage")
+}
+
+var checksumPattern = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
+
+// ValidChecksum reports whether value is a SHA-256 hex digest safe to use as a path segment.
+func ValidChecksum(value string) bool {
+	return checksumPattern.MatchString(value)
+}
+
+// ConvertChecksumToPath generates a storage path for a file based on its checksum.
 func ConvertChecksumToPath(checksum string) string {
-	subFolder := checksum[:2]
-	filePath := filepath.Join(StorageDir, subFolder, checksum)
-	return filePath
+	return filepath.Join(Root, checksum[:2], checksum)
 }

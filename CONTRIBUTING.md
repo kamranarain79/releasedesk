@@ -7,13 +7,24 @@ To understand the tech stack, please refer to the [Tech Stack](TECH_STACK.md) do
 
 ## Quick Start
 
-This project supports live reload with the [Go Air](https://github.com/air-verse/air) CLI. To get started:
+1. Build web assets (required before the Go binary embeds them):
 
-1. Install the Air CLI.
-2. Run it in the project root to enable hot reloading.
-3. Open [http://localhost:8090](http://localhost:8090) in your browser.
+   ```bash
+   cd web && npm install && npm run build
+   ```
 
-Note: you must the UI Development command at least one time to generate the web assets.
+2. Build and run the server:
+
+   ```bash
+   go build -o ./_tmp/releasedesk-server ./cmd/releasedesk-server
+   ./_tmp/releasedesk-server
+   ```
+
+3. Open **http://localhost:8080/login** (console). Optional: [Air](https://github.com/air-verse/air) in the repo root proxies **http://localhost:8090** → **8080**.
+
+To avoid Go/Node version drift, run **`docker compose up --build`** instead.
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for full setup and troubleshooting.
 
 ### UI Development
 
@@ -41,9 +52,8 @@ that resolves the dependency graph.
 
 ### Database
 
-A SQLite database is used, with migrations handled by `golang-migrate`. Migrations are written as simple SQL files
-stored in the `/migrations` directory. Each schema change requires a `change.up.sql` file (for applying the
-change) and a `change.down.sql` file (for rollbacks).
+SQLite database at `_data/releasedesk.db`. Schema changes are **XORM migrations** registered in
+`cmd/releasedesk-server/migrations.go` (`xorm.io/xorm/migrate`), applied automatically on server start.
 
 ### HTTP Server
 

@@ -23,6 +23,9 @@ func (c *releaseController) HandleSaveTestPlan(w http.ResponseWriter, r *http.Re
 		render.JSON(w, r, schemas.NewErrorResponse("Invalid release ID", nil))
 		return
 	}
+	if !c.allowContentEdit(w, r, releaseID) {
+		return
+	}
 
 	overview := r.Form.Get("qa-overview")
 	titles := r.Form["Title"]
@@ -45,11 +48,11 @@ func (c *releaseController) HandleSaveTestPlan(w http.ResponseWriter, r *http.Re
 		methods = append(methods, method)
 	}
 
-	if _, err := c.service.SaveTestPlan(releaseID, overview, methods); err != nil {
+	if _, err := c.service.SaveTestPlan(releaseID, overview, methods, c.actor(r)); err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, schemas.NewErrorResponse("Failed to save test methods", []string{err.Error()}))
 		return
 	}
 
-	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+	c.redirectToRelease(w, r, releaseID, "/test-methods")
 }

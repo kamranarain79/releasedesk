@@ -1,0 +1,23 @@
+{{ define "body" }}
+<div class="min-h-full bg-gray-100">
+  <header class="bg-violet-900">
+    <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-6">
+      <img class="h-8 w-8 rounded object-contain" src="/branding/logo" alt="">
+      <a class="text-white" href="/">Download Portal</a>
+      <h1 class="text-xl font-semibold text-white" translate="no">{{.Name}}</h1>
+    </div>
+  </header>
+  <main class="mx-auto max-w-5xl px-4 py-10">
+    <ul class="divide-y divide-gray-200 rounded-lg bg-white shadow">
+      {{range .Files}}
+        <li class="flex items-center justify-between px-4 py-3 text-sm">
+          <span translate="no">{{.Platform}} {{.Version}} — {{.Name}}</span>
+          <a class="font-medium text-violet-800" href="/apps/{{$.Slug}}/files/{{.Checksum}}">Download</a>
+        </li>
+      {{else}}
+        <li class="px-4 py-8 text-sm text-gray-600">No public files for this app yet.</li>
+      {{end}}
+    </ul>
+  </main>
+</div>
+{{ end }}

@@ -9,6 +9,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/brewbits-co/releasedesk/pkg/session"
 )
 
 const WelcomeMessage = `
@@ -29,6 +31,7 @@ Portal URL:             http://localhost:9090
 `
 
 func main() {
+	session.AssertProductionSecrets()
 	fmt.Print(WelcomeMessage)
 
 	// Container for dependency injection

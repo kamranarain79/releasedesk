@@ -57,6 +57,36 @@ func (r *buildRepository) Save(buildEntity *build.Build) error {
 	return nil
 }
 
+func (r *buildRepository) ExistsByNumber(platformID int, number string) (bool, error) {
+	return r.engine.Where("platform_id = ? AND number = ?", platformID, number).Exist(&build.Build{})
+}
+
+func (r *buildRepository) DeleteByPlatformAndNumber(platformID int, number string) error {
+	var existing build.Build
+	has, err := r.engine.Where("platform_id = ? AND number = ?", platformID, number).Get(&existing)
+	if err != nil || !has {
+		return err
+	}
+	session := r.engine.NewSession()
+	defer session.Close()
+	if err = session.Begin(); err != nil {
+		return err
+	}
+	if _, err = session.Where("build_id = ?", existing.ID).Delete(&build.Artifact{}); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	if _, err = session.Where("build_id = ?", existing.ID).Delete(&build.BuildMetadata{}); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	if _, err = session.ID(existing.ID).Delete(&build.Build{}); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	return session.Commit()
+}
+
 func (r *buildRepository) FindByPlatformID(platformID int) ([]build.BasicInfo, error) {
 	// Execute the database query
 	var builds []build.BasicInfo
@@ -102,6 +132,53 @@ func (r *buildRepository) GetByID(id int) (build.Build, error) {
 	}
 	buildDetails.Artifacts = artifacts
 	return buildDetails, nil
+}
+
+func (r *buildRepository) SetStatus(id int, status string) error {
+	_, err := r.engine.Exec("UPDATE build SET status = ? WHERE id = ?", status, id)
+	return err
+}
+
+func (r *buildRepository) CountArtifactsByChecksum(checksum string) (int64, error) {
+	return r.engine.Where("sha256 = ?", checksum).Count(&build.Artifact{})
+}
+
+func (r *buildRepository) DeleteByID(id int) ([]string, error) {
+	var artifacts []build.Artifact
+	if err := r.engine.Where("build_id = ?", id).Find(&artifacts); err != nil {
+		return nil, err
+	}
+	checksums := make([]string, 0, len(artifacts))
+	for _, artifact := range artifacts {
+		if artifact.Sha256 != "" {
+			checksums = append(checksums, artifact.Sha256)
+		}
+	}
+	session := r.engine.NewSession()
+	defer session.Close()
+	if err := session.Begin(); err != nil {
+		return nil, err
+	}
+	if _, err := session.Exec("DELETE FROM linked_builds WHERE build_id = ?", id); err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+	if _, err := session.Where("build_id = ?", id).Delete(&build.Artifact{}); err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+	if _, err := session.Where("build_id = ?", id).Delete(&build.BuildMetadata{}); err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+	if _, err := session.Exec("DELETE FROM build WHERE id = ?", id); err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+	if err := session.Commit(); err != nil {
+		return nil, err
+	}
+	return checksums, nil
 }
 
 func (r *buildRepository) GetArtifactByChecksum(checksum string) (build.Artifact, error) {

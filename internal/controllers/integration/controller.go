@@ -5,6 +5,7 @@ import (
 
 	"github.com/brewbits-co/releasedesk/internal/services/app"
 	"github.com/brewbits-co/releasedesk/internal/services/build"
+	"github.com/brewbits-co/releasedesk/internal/services/platform"
 	"github.com/brewbits-co/releasedesk/internal/services/release"
 )
 
@@ -19,18 +20,25 @@ type Controller interface {
 	GetTestMethods(w http.ResponseWriter, r *http.Request)
 	LatestRelease(w http.ResponseWriter, r *http.Request)
 	DownloadByChecksum(w http.ResponseWriter, r *http.Request)
+	CreateRelease(w http.ResponseWriter, r *http.Request)
+	PutReleaseNotes(w http.ResponseWriter, r *http.Request)
+	PutTestMethods(w http.ResponseWriter, r *http.Request)
+	DownloadBundle(w http.ResponseWriter, r *http.Request)
+	Feed(w http.ResponseWriter, r *http.Request)
 }
 
-func NewController(appService app.Service, releaseService release.Service, buildService build.Service) Controller {
+func NewController(appService app.Service, releaseService release.Service, buildService build.Service, platformService platform.Service) Controller {
 	return &controller{
-		apps:     appService,
-		releases: releaseService,
-		builds:   buildService,
+		apps:      appService,
+		releases:  releaseService,
+		builds:    buildService,
+		platforms: platformService,
 	}
 }
 
 type controller struct {
-	apps     app.Service
-	releases release.Service
-	builds   build.Service
+	apps      app.Service
+	releases  release.Service
+	builds    build.Service
+	platforms platform.Service
 }

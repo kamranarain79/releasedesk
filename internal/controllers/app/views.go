@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	domainaudit "github.com/brewbits-co/releasedesk/internal/domains/audit"
+	auditsvc "github.com/brewbits-co/releasedesk/internal/services/audit"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/internal/views"
 	"github.com/brewbits-co/releasedesk/pkg/session"
@@ -36,9 +38,33 @@ func (c *appController) RenderDashboard(w http.ResponseWriter, r *http.Request) 
 		if listErr != nil {
 			log.Println(listErr)
 		} else {
-			data.LatestReleases = releases
+			directory := c.audits.Directory()
+			rows := make([]DashboardRelease, 0, len(releases))
+			for _, item := range releases {
+				events, _ := c.audits.List(currentApp.AppID, domainaudit.ReleaseSubject(item.Version))
+				events = auditsvc.Annotate(events, directory)
+				row := DashboardRelease{BasicInfo: item, Creator: directory.Person(item.CreatedBy)}
+				if row.Creator.Name == "" || row.Creator.Name == "Unknown" {
+					for _, event := range events {
+						if event.Action == "created" {
+							row.Creator = directory.Person(event.Actor)
+							break
+						}
+					}
+				}
+				for _, event := range events {
+					if event.Action == "edited" {
+						row.Editor = directory.Person(event.Actor)
+						row.HasEditor = true
+						break
+					}
+				}
+				rows = append(rows, row)
+			}
+			data.LatestReleases = rows
 		}
 
+		directory := c.audits.Directory()
 		var latestBuilds []DashboardBuild
 		for _, platformData := range currentApp.Platforms {
 			builds, buildErr := c.buildService.GetPlatformBuilds(platformData.PlatformID)
@@ -54,6 +80,7 @@ func (c *appController) RenderDashboard(w http.ResponseWriter, r *http.Request) 
 				latestBuilds = append(latestBuilds, DashboardBuild{
 					OS:        platformData.OS,
 					BasicInfo: builds[i],
+					Uploader:  directory.Person(builds[i].CreatedBy),
 				})
 			}
 		}

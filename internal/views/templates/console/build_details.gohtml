@@ -19,6 +19,10 @@
                     </span>
                     Build #{{ .Build.BasicInfo.Number }}
                 </h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    {{ if eq .Build.Status "Published" }}Published{{ else }}Unpublished{{ end }}
+                    · uploaded by {{ template "person" .Uploader }}
+                </p>
                 <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-2">
                     <div class="mt-2 flex items-center text-sm text-gray-500">
                         <span class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-inset ring-gray-200 bg-white select-none">
@@ -28,6 +32,18 @@
                     </div>
                 </div>
             </div>
+            {{ if .CanEdit }}
+                <div class="mt-3 flex gap-2 md:mt-0">
+                    {{ if ne .Build.Status "Published" }}
+                        <form method="POST" action="/internal/apps/{{.CurrentAppData.AppSlug}}/platforms/{{.CurrentPlatform.OS}}/builds/{{.Build.Number}}/publish">
+                            <button class="rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white" type="submit">Publish</button>
+                        </form>
+                    {{ end }}
+                    <form method="POST" action="/internal/apps/{{.CurrentAppData.AppSlug}}/platforms/{{.CurrentPlatform.OS}}/builds/{{.Build.Number}}/delete" onsubmit="return confirm('Delete this build and its files?')">
+                        <button class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-200" type="submit">Delete</button>
+                    </form>
+                </div>
+            {{ end }}
         </div>
         <div class="mt-4">
             <div class="grid grid-cols-1 sm:hidden">
@@ -90,6 +106,10 @@
                     {{ template "artifact-line" . }}
                 {{- end }}
             </ul>
+        </div>
+
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            {{ template "audit-log" .Audit }}
         </div>
     </div>
 {{ end }}

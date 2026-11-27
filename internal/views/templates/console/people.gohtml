@@ -1,52 +1,92 @@
 {{ define "content" }}
-    <div class="space-y-6">
+    <div class="space-y-8">
         <p class="text-sm text-gray-600">
-            People on this instance can sign in to the console. Inviting members, testers, and per-app roles will land in a later version.
+            Create a console login, then add that person to an application. People who are not members do not see that app.
         </p>
 
-        <div class="overflow-hidden rounded-lg border border-gray-200">
+        <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-700 sm:pl-6">Username</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Name</th>
+                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-700 sm:pl-6">Person</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Email</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-gray-700">Role</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
+                <tbody class="divide-y divide-gray-200">
                 {{- range .Users }}
                     <tr>
-                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6" translate="no">{{.Username}}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            {{ if or .FirstName.Valid .LastName.Valid }}
-                                {{ if .FirstName.Valid }}{{.FirstName.String}}{{ end }}
-                                {{ if .LastName.Valid }}{{.LastName.String}}{{ end }}
-                            {{ else }}
-                                —
-                            {{ end }}
+                        <td class="py-4 pl-4 pr-3 sm:pl-6">
+                            <div class="flex items-center gap-3">
+                                <span class="relative inline-block h-9 w-9 overflow-hidden rounded-full bg-gray-100">
+                                    <img class="h-full w-full object-cover" src="/branding/avatars/{{.ID}}" alt="" onerror="this.remove()">
+                                </span>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900" translate="no">{{.Username}}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ if or .FirstName.Valid .LastName.Valid }}
+                                            {{ if .FirstName.Valid }}{{.FirstName.String}}{{ end }}
+                                            {{ if .LastName.Valid }}{{.LastName.String}}{{ end }}
+                                        {{ else }}—{{ end }}
+                                    </div>
+                                </div>
+                            </div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            {{ if .Email.Valid }}{{.Email.String}}{{ else }}—{{ end }}
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{.Role.String}}</td>
+                        <td class="px-3 py-4 text-sm text-gray-500">{{ if .Email.Valid }}{{.Email.String}}{{ else }}—{{ end }}</td>
+                        <td class="px-3 py-4 text-sm text-gray-500">{{.Role.String}}</td>
                     </tr>
                 {{ else }}
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500">No users found.</td>
+                        <td colspan="3" class="px-4 py-8 text-center text-sm text-gray-500">No users found.</td>
                     </tr>
                 {{- end }}
                 </tbody>
             </table>
         </div>
 
-        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-8">
-            <p class="text-sm font-medium text-gray-900">Coming in a later version</p>
-            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
-                <li>Invite members and testers by email</li>
-                <li>Per-application access and distribution groups</li>
-                <li>API tokens scoped to a person or service account</li>
-            </ul>
-        </div>
+        {{ if .IsAdmin }}
+        <form class="max-w-2xl rounded-lg border border-gray-200 bg-white p-6" method="POST" action="/internal/people">
+            <h2 class="text-base font-semibold text-gray-900">Create a person</h2>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-medium text-gray-900">Username
+                    <input name="username" required autocomplete="off" class="mt-1 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+                </label>
+                <label class="block text-sm font-medium text-gray-900">Email
+                    <input name="email" type="email" required class="mt-1 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+                </label>
+                <label class="block text-sm font-medium text-gray-900">First name
+                    <input name="firstName" required class="mt-1 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+                </label>
+                <label class="block text-sm font-medium text-gray-900">Last name
+                    <input name="lastName" required class="mt-1 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+                </label>
+                <label class="block text-sm font-medium text-gray-900 sm:col-span-2">Password
+                    <input name="password" type="password" required autocomplete="new-password" class="mt-1 block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+                    <span class="mt-1 block text-xs font-normal text-gray-500">At least 8 characters, with an uppercase letter, a lowercase letter, and a digit.</span>
+                </label>
+                <label class="block text-sm font-medium text-gray-900">Instance role
+                    <select name="role" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                        <option value="viewer">Viewer</option>
+                        <option value="tester">Tester</option>
+                        <option value="developer">Developer</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </label>
+                <label class="block text-sm font-medium text-gray-900">Add to application
+                    <select name="app" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                        <option value="">Do not add yet</option>
+                        {{ range .Apps }}<option value="{{.Slug}}">{{.Name}}</option>{{ end }}
+                    </select>
+                </label>
+                <label class="block text-sm font-medium text-gray-900">Access on that application
+                    <select name="appRole" class="mt-1 block w-full rounded-md border-gray-300 text-sm">
+                        <option value="user">App user</option>
+                        <option value="admin">App admin</option>
+                    </select>
+                </label>
+            </div>
+            <button class="mt-4 rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white" type="submit">Create</button>
+        </form>
+        {{ end }}
     </div>
 {{ end }}

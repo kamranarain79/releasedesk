@@ -1,0 +1,73 @@
+stages:
+  - test
+  - package
+
+web:
+  stage: test
+  image: node:22-bookworm
+  cache:
+    key:
+      files:
+        - web/package-lock.json
+    paths:
+      - web/node_modules/
+  script:
+    - cd web && npm ci && npm run build
+  artifacts:
+    paths:
+      - cmd/releasedesk-server/assets/bundle.js
+      - cmd/releasedesk-server/assets/tailwind.css
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+go_test:
+  stage: test
+  image: golang:1.23-bookworm
+  needs: ["web"]
+  cache:
+    key:
+      files:
+        - go.sum
+    paths:
+      - .cache/go
+  variables:
+    CGO_ENABLED: "1"
+    GOCACHE: $CI_PROJECT_DIR/.cache/go
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
+    - go test ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+go_build:
+  stage: package
+  image: golang:1.23-bookworm
+  needs: ["web", "go_test"]
+  variables:
+    CGO_ENABLED: "1"
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
+    - mkdir -p _tmp
+    - go build -o _tmp/releasedesk-server ./cmd/releasedesk-server
+  artifacts:
+    paths:
+      - _tmp/releasedesk-server
+    expire_in: 7 days
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+docker:
+  stage: package
+  image: docker:27
+  needs: ["go_test"]
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - docker build -t "releasedesk:$CI_COMMIT_SHORT_SHA" .
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

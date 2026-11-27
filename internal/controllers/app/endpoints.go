@@ -28,7 +28,8 @@ func (c *appController) HandleCreateApp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newApp, err := c.service.CreateApp(appCreationRequest)
+	userID, _ := r.Context().Value("userID").(int)
+	newApp, err := c.service.CreateApp(userID, appCreationRequest)
 	if err != nil {
 		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, schemas.NewErrorResponse("An application with the same identifier already exists.", []string{

@@ -26,8 +26,9 @@ Static files under `/assets/*` are served from **`go:embed`** in the server bina
 
 ## DevOps & Infrastructure
 
-- Docker & Docker Compose (`Dockerfile`, `docker-compose.yml`; Go 1.23 + Node 22)
-- GitHub Actions (CI/CD)
+- Docker & Docker Compose (`Dockerfile`, `docker-compose.yml` starts PostgreSQL with the app)
+- SQLite by default, PostgreSQL when `RELEASEDESK_DATABASE_URL` is set
+- GitLab CI (`.gitlab-ci.yml`)
 - Local: [Air](https://github.com/air-verse/air) optional (`.air.toml`, dev proxy :8090)
 
 ## Languages

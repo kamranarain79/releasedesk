@@ -26,38 +26,17 @@
     </div>
 
     <div class="rounded-lg bg-white shadow p-6 mt-4">
+        {{ if .Editing }}
+        <div class="mb-4 flex items-center justify-between">
+            <p class="text-sm text-gray-600"><i class="fa-brands fa-markdown"></i> Markdown is supported. Saving returns to preview.</p>
+            <a class="text-sm font-medium text-violet-800" href="/dashboard/{{.AppSlug}}/releases/{{.Release.Version}}/release-notes">Back to preview</a>
+        </div>
         <form action="/internal/releases/{{.Release.ID}}/release-notes" method="POST">
-            <div>
-                <div class="group flex items-center" aria-orientation="horizontal" role="tablist">
-                    <!-- Selected: "bg-gray-100 text-gray-900 hover:bg-gray-200", Not Selected: "bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-900" -->
-                    <button id="tabs-1-tab-1"
-                            class="rounded-md border border-transparent px-3 py-1.5 text-sm font-medium hover:text-gray-900 bg-gray-100 text-gray-900 hover:bg-gray-200"
-                            aria-controls="tabs-1-panel-1" role="tab" type="button">Write
-                    </button>
-                    <!-- Selected: "bg-gray-100 text-gray-900 hover:bg-gray-200", Not Selected: "bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-900" -->
-                    <button id="tabs-1-tab-2"
-                            class="ml-2 rounded-md border border-transparent bg-white px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                            aria-controls="tabs-1-panel-2" role="tab" type="button">Preview
-                    </button>
-                </div>
-                <div class="mt-2">
-                    <div id="tabs-1-panel-1" class="-m-0.5 rounded-lg p-0.5" aria-labelledby="tabs-1-tab-1"
-                         role="tabpanel" tabindex="0">
-                        <label for="release-notes" class="sr-only">Release Notes</label>
-                        <div>
-                            <textarea rows="5" name="release-notes" id="release-notes"
-                                      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-violet-600 sm:text-sm/6"
-                                      placeholder="Add your release notes...">{{.ReleaseNotes.Text}}</textarea>
-                        </div>
-                    </div>
-                    <div class="-m-0.5 rounded-lg p-0.5">
-                        <div class="mx-px mt-px px-3 pb-6 pt-2 text-xs text-gray-500"><i
-                                    class="fa-brands fa-markdown"></i> Markdown is supported.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <fieldset name="Changes">
+            <label for="release-notes" class="sr-only">Release Notes</label>
+            <textarea rows="8" name="release-notes" id="release-notes"
+                      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-violet-600 sm:text-sm/6"
+                      placeholder="Add your release notes...">{{.ReleaseNotes.Text}}</textarea>
+            <fieldset class="mt-6" name="Changes">
                 <legend class="text-sm font-medium text-violet-900 mb-4">
                     Changelog
                 </legend>
@@ -105,6 +84,27 @@
                 </button>
             </div>
         </form>
+        {{ else }}
+        <div class="mb-4 flex items-center justify-between">
+            <h4 class="text-base font-semibold text-gray-900">Preview</h4>
+            {{ if .CanEdit }}
+                <a class="rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white" href="/dashboard/{{.AppSlug}}/releases/{{.Release.Version}}/release-notes?edit=1">Edit</a>
+            {{ end }}
+        </div>
+        <div class="space-y-2">
+            {{ if .ReleaseNotes.Text }}{{ markdown .ReleaseNotes.Text }}{{ else }}<p class="text-sm text-gray-500">No release notes yet.</p>{{ end }}
+        </div>
+        <ul class="mt-6 divide-y divide-gray-200">
+            {{ range .ReleaseNotes.Changelogs }}
+                <li class="flex gap-3 py-2 text-sm">
+                    <span class="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-bold text-gray-700">{{.ChangeType}}</span>
+                    <span>{{.Text}}</span>
+                </li>
+            {{ else }}
+                <li class="py-2 text-sm text-gray-500">No changelog entries.</li>
+            {{ end }}
+        </ul>
+        {{ end }}
 
     </div>
 {{ end }}

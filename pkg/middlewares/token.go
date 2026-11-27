@@ -3,21 +3,14 @@ package middlewares
 import (
 	"context"
 	"crypto/subtle"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/brewbits-co/releasedesk/internal/services/auth"
+	"github.com/brewbits-co/releasedesk/internal/services/app"
+	"github.com/brewbits-co/releasedesk/internal/services/instance"
 )
-
-const defaultAPIToken = "90a514ab93e2c32fdd1072154b26a100"
-
-func expectedAPIToken() string {
-	if token := os.Getenv("RELEASEDESK_API_TOKEN"); token != "" {
-		return token
-	}
-	return defaultAPIToken
-}
 
 func extractAPIToken(r *http.Request) string {
 	if token := r.Header.Get("X-Auth"); token != "" {
@@ -35,20 +28,54 @@ func extractAPIToken(r *http.Request) string {
 	return ""
 }
 
-// APITokenAuthorization authenticates the Python / Filebrowser-style client.
-func APITokenAuthorization(authSrv auth.Service) func(http.Handler) http.Handler {
+// APITokenAuthorization authenticates a per-app CI token or the generated instance token.
+func APITokenAuthorization(apps app.Service, inst instance.Service) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			got := extractAPIToken(r)
-			want := expectedAPIToken()
-			if subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
+			if got == "" {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
-
-			sessionCtx := context.WithValue(r.Context(), "userID", 1)
-			sessionCtx = context.WithValue(sessionCtx, "username", "admin")
-			next.ServeHTTP(w, r.WithContext(sessionCtx))
+			if token, err := apps.LookupToken(got); err == nil && !token.Revoked {
+				if token.Scope == "read" && r.Method != http.MethodGet && r.Method != http.MethodHead {
+					http.Error(w, "read-only token", http.StatusForbidden)
+					return
+				}
+				scope := token.Scope
+				if scope == "" {
+					scope = "write"
+				}
+				ctx := context.WithValue(r.Context(), "tokenAppID", token.AppID)
+				ctx = context.WithValue(ctx, "tokenPrefix", token.Prefix)
+				ctx = context.WithValue(ctx, "tokenScope", scope)
+				ctx = context.WithValue(ctx, "actor", "ci:"+token.Prefix)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			if inst.Matches(got) || envTokenMatches(got) {
+				ctx := context.WithValue(r.Context(), "tokenGlobal", true)
+				ctx = context.WithValue(ctx, "actor", "ci:instance")
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		})
 	}
+}
+
+func envTokenMatches(got string) bool {
+	want := os.Getenv("RELEASEDESK_API_TOKEN")
+	if want == "" || len(got) != len(want) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(got), []byte(want)) == 1
+}
+
+// SafeLogger records the method and path without query strings so tokens are not written to logs.
+func SafeLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }

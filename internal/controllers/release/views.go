@@ -5,12 +5,23 @@ import (
 	"net/http"
 	"strconv"
 
+	domainaudit "github.com/brewbits-co/releasedesk/internal/domains/audit"
 	"github.com/brewbits-co/releasedesk/internal/domains/release"
+	"github.com/brewbits-co/releasedesk/internal/domains/user"
+	auditsvc "github.com/brewbits-co/releasedesk/internal/services/audit"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/internal/views"
 	"github.com/brewbits-co/releasedesk/pkg/session"
 	"github.com/go-chi/chi/v5"
 )
+
+func (c *releaseController) auditFor(appID int, subject string, directory user.Directory) []domainaudit.Event {
+	events, err := c.audits.List(appID, subject)
+	if err != nil {
+		return []domainaudit.Event{}
+	}
+	return auditsvc.Annotate(events, directory)
+}
 
 func (c *releaseController) RenderReleaseList(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
@@ -47,6 +58,11 @@ func (c *releaseController) RenderReleaseList(w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	available := c.binaries(currentApp, release.Release{BasicInfo: release.BasicInfo{BuildSelection: release.Manual}})
+	if available == nil {
+		available = []ReleaseBinary{}
+	}
+
 	data := ReleaseListData{
 		CurrentPage:      "Releases",
 		SessionData:      session.NewSessionData(r.Context()),
@@ -54,6 +70,9 @@ func (c *releaseController) RenderReleaseList(w http.ResponseWriter, r *http.Req
 		Releases:         releases,
 		Channels:         channels,
 		CurrentChannelID: currentChannelID,
+		AvailableBuilds:  available,
+		CanEdit:          c.canEdit(r, slug),
+		Directory:        c.audits.Directory(),
 	}
 
 	tmpl, err := views.ParseTemplate(views.SidebarLayout, "templates/console/release_list.gohtml")
@@ -95,12 +114,56 @@ func (c *releaseController) RenderReleaseSummary(w http.ResponseWriter, r *http.
 		return
 	}
 
+	var checksums []string
+	for _, platformData := range currentApp.Platforms {
+		matches, err := c.buildService.FindByPlatformAndVersion(platformData.PlatformID, version)
+		if err != nil {
+			continue
+		}
+		for _, match := range matches {
+			full, err := c.buildService.GetBuildByID(match.ID)
+			if err != nil {
+				continue
+			}
+			for _, artifact := range full.Artifacts {
+				checksums = append(checksums, artifact.Sha256)
+			}
+		}
+	}
+	downloads, _ := c.buildService.SumDownloads(checksums)
+	directory := c.audits.Directory()
+	events := c.auditFor(currentApp.AppID, domainaudit.ReleaseSubject(releaseSummary.Version), directory)
+	creator := directory.Person(releaseSummary.CreatedBy)
+	if creator.Name == "" || creator.Name == "Unknown" {
+		for _, event := range events {
+			if event.Action == "created" {
+				creator = directory.Person(event.Actor)
+				break
+			}
+		}
+	}
+	var editor user.Person
+	hasEditor := false
+	for _, event := range events {
+		if event.Action == "edited" {
+			editor = directory.Person(event.Actor)
+			hasEditor = true
+			break
+		}
+	}
 	data := ReleaseSummaryData{
 		CurrentPage:    "Releases",
 		SessionData:    session.NewSessionData(r.Context()),
 		CurrentAppData: currentApp,
 		Channels:       channels,
 		Release:        releaseSummary,
+		DownloadCount:  downloads,
+		CanEdit:        c.canEdit(r, slug),
+		Binaries:       c.binaries(currentApp, releaseSummary),
+		Audit:          events,
+		Creator:        creator,
+		Editor:         editor,
+		HasEditor:      hasEditor,
 	}
 
 	views.Execute(w, tmpl, data)
@@ -133,12 +196,15 @@ func (c *releaseController) RenderReleaseNotes(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	canEdit := c.canEdit(r, slug)
 	data := ReleaseNotesData{
 		CurrentPage:    "Releases",
 		SessionData:    session.NewSessionData(r.Context()),
 		CurrentAppData: currentApp,
 		Release:        releaseSummary,
 		ReleaseNotes:   releaseNotes,
+		CanEdit:        canEdit,
+		Editing:        c.editing(r, canEdit),
 	}
 
 	views.Execute(w, tmpl, data)
@@ -171,12 +237,15 @@ func (c *releaseController) RenderTestMethods(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	canEdit := c.canEdit(r, slug)
 	data := TestMethodsData{
 		CurrentPage:    "Releases",
 		SessionData:    session.NewSessionData(r.Context()),
 		CurrentAppData: currentApp,
 		Release:        releaseSummary,
 		TestPlan:       plan,
+		CanEdit:        canEdit,
+		Editing:        c.editing(r, canEdit),
 	}
 
 	views.Execute(w, tmpl, data)

@@ -1,0 +1,11 @@
+{{ define "content" }}
+    {{- /*gotype: github.com/brewbits-co/releasedesk/internal/controllers/app.announcePage*/ -}}
+    <h2 class="text-2xl font-bold text-gray-900">Announcements</h2>
+    <p class="mt-2 text-sm text-gray-600">Messages are stored and posted to the app Teams webhook. Email is sent when outgoing mail is saved under Administration.</p>
+    <ul class="mt-4 space-y-2 text-sm text-gray-700">{{range .Items}}<li><strong>{{.Version}}</strong> — {{.Message}}</li>{{else}}<li>No announcements.</li>{{end}}</ul>
+    <form class="mt-4 max-w-xl space-y-3" method="POST" action="/internal/apps/{{.AppSlug}}/announcements">
+        <input name="version" required placeholder="1.0.1" class="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300">
+        <textarea name="message" required rows="4" class="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300"></textarea>
+        <button class="rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white" type="submit">Publish</button>
+    </form>
+{{ end }}

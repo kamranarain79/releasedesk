@@ -39,6 +39,18 @@ func (r *platformRepository) FindByAppID(appID int) ([]platform.Platform, error)
 	return platforms, nil
 }
 
+func (r *platformRepository) GetByID(id int) (platform.Platform, error) {
+	var platformInfo platform.Platform
+	exist, err := r.engine.ID(id).Get(&platformInfo)
+	if err != nil {
+		return platform.Platform{}, err
+	}
+	if !exist {
+		return platform.Platform{}, sql.ErrNoRows
+	}
+	return platformInfo, nil
+}
+
 func (r *platformRepository) GetByAppSlugAndOS(slug values.Slug, os values.OS) (platform.Platform, error) {
 	var platformInfo platform.Platform
 	exist, err := r.engine.Join("INNER", "app", "platform.app_id = app.id").

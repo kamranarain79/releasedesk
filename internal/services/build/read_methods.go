@@ -31,3 +31,11 @@ func (s *service) GetArtifactByChecksum(checksum string) (build.Artifact, error)
 func (s *service) FindByPlatformAndVersion(platformID int, version string) ([]build.BasicInfo, error) {
 	return s.buildRepo.FindByPlatformIDAndVersion(platformID, version)
 }
+
+func (s *service) IncrementDownload(sha256 string) error {
+	return s.downloads.Increment(sha256)
+}
+
+func (s *service) SumDownloads(checksums []string) (int64, error) {
+	return s.downloads.Sum(checksums)
+}

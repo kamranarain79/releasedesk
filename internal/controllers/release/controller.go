@@ -1,9 +1,12 @@
 package release
 
 import (
-	"github.com/brewbits-co/releasedesk/internal/services/app"
-	"github.com/brewbits-co/releasedesk/internal/services/release"
 	"net/http"
+
+	"github.com/brewbits-co/releasedesk/internal/services/app"
+	auditsvc "github.com/brewbits-co/releasedesk/internal/services/audit"
+	"github.com/brewbits-co/releasedesk/internal/services/build"
+	"github.com/brewbits-co/releasedesk/internal/services/release"
 )
 
 type ReleaseController interface {
@@ -15,16 +18,23 @@ type ReleaseController interface {
 	HandleSaveReleaseNotes(w http.ResponseWriter, r *http.Request)
 	HandleSaveTestPlan(w http.ResponseWriter, r *http.Request)
 	HandleUpdateBasicInfo(w http.ResponseWriter, r *http.Request)
+	HandleLinkBuilds(w http.ResponseWriter, r *http.Request)
+	HandlePublishRelease(w http.ResponseWriter, r *http.Request)
+	HandleDeleteRelease(w http.ResponseWriter, r *http.Request)
 }
 
-func NewReleaseController(service release.Service, appService app.Service) ReleaseController {
+func NewReleaseController(service release.Service, appService app.Service, buildService build.Service, audits auditsvc.Service) ReleaseController {
 	return &releaseController{
-		service:    service,
-		appService: appService,
+		service:      service,
+		appService:   appService,
+		buildService: buildService,
+		audits:       audits,
 	}
 }
 
 type releaseController struct {
-	service    release.Service
-	appService app.Service
+	service      release.Service
+	appService   app.Service
+	buildService build.Service
+	audits       auditsvc.Service
 }

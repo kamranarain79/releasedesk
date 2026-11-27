@@ -16,12 +16,16 @@ With **ReleaseDesk**, you can:
 
 - 📦 **Distribute your apps** both internally and externally through a customizable **Download Portal**
 - 🔐 **Control access** using **distribution groups**
-- 🚀 Release software for **multiple platforms**:
+- 🚀 Release firmware **and** application binaries for **multiple platforms**:
     - 🪟 Windows (`.appx`, `.appxbundle`, `.appxupload`, `.msix`, `.msixbundle`, `.msixupload`, `.exe`, `.zip`, `.msi`)
     - 🍎 macOS (`.zip`, `.app.zip`, `.dmg`, `.pkg`)
-    - 🐧 Linux (`.AppImage`, `.deb`, `.rpm`, `.tgz`, `.gz`, `.snap`, `.flatpak`)
+    - 🐧 Linux (`.AppImage`, `.deb`, `.rpm`, `.tgz`, `.gz`, `.snap`, `.flatpak`, `.raucb`, `.img`, `.wic`)
     - 📱 iOS (`.ipa`)
     - 🤖 Android (`.apk`, `.aab`)
+    - 🔌 ESP32 (firmware `.bin`, bootloader, partition table)
+    - 🔌 STM32 (`.bin` / Intel HEX)
+- 📝 Keep **release notes** and **QA test methods** on each version
+- 🏭 Production flashing still uses [Filebrowser](https://github.com/filebrowser/filebrowser); the Python tool pulls files/notes/tests from `/api/v1` (see [docs/PYTHON_TOOL.md](docs/PYTHON_TOOL.md))
 - ⚙️ **Automate your CI/CD pipeline** with release workflows that:
     - 📣 Trigger announcements (email notifications, webhooks, etc.)
     - 🔄 Integrate with your app for **in-app updates**

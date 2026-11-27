@@ -29,12 +29,32 @@ func (c *releaseController) HandleCreateRelease(w http.ResponseWriter, r *http.R
 		render.PlainText(w, r, err.Error())
 		return
 	}
+	releaseCreationRequest.CreatedBy = c.actor(r)
 
 	newRelease, err := c.service.CreateRelease(values.Slug(slug), releaseCreationRequest)
 	if err != nil {
 		render.Status(r, http.StatusConflict)
 		render.JSON(w, r, schemas.NewErrorResponse(err.Error(), []string{}))
 		return
+	}
+
+	links := parseBuildLinks(r.Form["build"])
+	if len(links) > 0 {
+		if err = c.service.ReplaceLinks(newRelease.ID, links); err != nil {
+			render.Status(r, http.StatusConflict)
+			render.JSON(w, r, schemas.NewErrorResponse(err.Error(), []string{}))
+			return
+		}
+		if _, err = c.service.UpdateReleaseBasicInfo(release.BasicInfo{
+			ID:             newRelease.ID,
+			TargetChannel:  newRelease.TargetChannel,
+			Status:         newRelease.Status,
+			BuildSelection: release.Manual,
+		}); err != nil {
+			render.Status(r, http.StatusConflict)
+			render.JSON(w, r, schemas.NewErrorResponse(err.Error(), []string{}))
+			return
+		}
 	}
 
 	log.Println(newRelease.ID)

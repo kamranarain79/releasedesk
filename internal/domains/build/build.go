@@ -24,7 +24,16 @@ type BasicInfo struct {
 	Version string `xorm:"not null"`
 	// Number represents a unique code or sequence number associated with the Build.
 	Number string `xorm:"not null unique(build_uidx)"`
+	// Status is Unpublished until someone publishes the binaries.
+	Status string `xorm:"varchar(20) not null default 'Unpublished'"`
+	// CreatedBy is a username or ci:<token-prefix>.
+	CreatedBy string `xorm:"varchar(100)"`
 }
+
+const (
+	StatusUnpublished = "Unpublished"
+	StatusPublished   = "Published"
+)
 
 type Build struct {
 	validator.BaseValidator `xorm:"-"`

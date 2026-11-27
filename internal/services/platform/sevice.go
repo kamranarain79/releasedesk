@@ -12,13 +12,17 @@ type Service interface {
 	// It validates the input data against defined business rules and returns
 	// the created platform or an error if the validation or creation fails.
 	AddPlatformToApp(slug values.Slug, info platform.BasicInfo) (platform.Platform, error)
+	SaveConfig(slug values.Slug, os values.OS, key, value string) error
+	ListConfig(slug values.Slug, os values.OS) ([]platform.Config, error)
+	FlashNotes(platformID int) string
 }
 
 // NewPlatformService initializes a new instance of the platform Service using the provided dependencies.
-func NewPlatformService(platformRepo platform.PlatformRepository, appRepo app.AppRepository) Service {
+func NewPlatformService(platformRepo platform.PlatformRepository, appRepo app.AppRepository, configRepo platform.ConfigRepository) Service {
 	return &service{
 		platformRepo: platformRepo,
 		appRepo:      appRepo,
+		configRepo:   configRepo,
 	}
 }
 
@@ -26,4 +30,5 @@ func NewPlatformService(platformRepo platform.PlatformRepository, appRepo app.Ap
 type service struct {
 	platformRepo platform.PlatformRepository
 	appRepo      app.AppRepository
+	configRepo   platform.ConfigRepository
 }

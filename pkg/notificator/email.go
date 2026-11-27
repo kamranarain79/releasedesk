@@ -1,12 +1,41 @@
 package notificator
 
 import (
-	"log"
+	"errors"
 	"net/smtp"
+	"sync"
 )
 
-const GMAIL_EMAIL = "codesrelease@gmail.com"
-const GMAIL_PASSWORD = "kyjdEk-xiwjif-7gitku"
+// SMTP is the outgoing mail configuration edited on the Administration page.
+type SMTP struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	From     string
+}
+
+var mailState = struct {
+	sync.RWMutex
+	cfg SMTP
+}{}
+
+// Configure replaces the mail settings used by SendEmail.
+func Configure(cfg SMTP) {
+	if cfg.Port == "" {
+		cfg.Port = "587"
+	}
+	mailState.Lock()
+	mailState.cfg = cfg
+	mailState.Unlock()
+}
+
+// Configured reports whether a host has been saved.
+func Configured() bool {
+	mailState.RLock()
+	defer mailState.RUnlock()
+	return mailState.cfg.Host != ""
+}
 
 type Email struct {
 	To      string
@@ -14,20 +43,28 @@ type Email struct {
 	Body    string
 }
 
+// SendEmail delivers one message with the Administration SMTP settings.
 func SendEmail(email Email) error {
-	msg := "From: " + GMAIL_EMAIL + "\n" +
+	mailState.RLock()
+	cfg := mailState.cfg
+	mailState.RUnlock()
+	if cfg.Host == "" {
+		return errors.New("smtp not configured")
+	}
+	if cfg.Port == "" {
+		cfg.Port = "587"
+	}
+	from := cfg.From
+	if from == "" {
+		from = cfg.User
+	}
+	msg := "From: " + from + "\n" +
 		"To: " + email.To + "\n" +
 		"Subject: " + email.Subject + "\n\n" +
 		email.Body
-
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", GMAIL_EMAIL, GMAIL_PASSWORD, "smtp.gmail.com"),
-		GMAIL_EMAIL, []string{email.To}, []byte(msg))
-
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return err
+	var auth smtp.Auth
+	if cfg.User != "" {
+		auth = smtp.PlainAuth("", cfg.User, cfg.Password, cfg.Host)
 	}
-
-	return nil
+	return smtp.SendMail(cfg.Host+":"+cfg.Port, auth, from, []string{email.To}, []byte(msg))
 }

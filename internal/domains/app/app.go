@@ -37,6 +37,8 @@ type BasicInfo struct {
 	SetupGuideCompleted bool `xorm:"not null default false"`
 	// Logo is the image logo of the App.
 	Logo sql.NullString
+	// TeamsWebhookURL is the Microsoft Teams Incoming Webhook for this app (secret).
+	TeamsWebhookURL string `xorm:"text" json:"-"`
 }
 
 type PlatformAvailability struct {

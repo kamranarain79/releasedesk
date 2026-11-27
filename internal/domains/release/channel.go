@@ -13,6 +13,8 @@ type Channel struct {
 	Name string `xorm:"not null unique(channel_uidx)"`
 	// Closed indicates whether the Channel is restricted to access only by invite, such as in a closed beta.
 	Closed bool `xorm:"not null default false" json:"-"`
+	// TeamsWebhookURL overrides the app webhook for this release channel.
+	TeamsWebhookURL string `xorm:"text" json:"-"`
 }
 
 // NewByMaturityChannels creates a predefined set of channels based on software maturity levels.

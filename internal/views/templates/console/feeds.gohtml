@@ -1,0 +1,7 @@
+{{ define "content" }}
+    {{- /*gotype: github.com/brewbits-co/releasedesk/internal/controllers/app.feedPage*/ -}}
+    <h2 class="text-2xl font-bold text-gray-900">Feeds</h2>
+    <p class="mt-2 text-sm text-gray-600">Latest build per platform. Authenticate with the app CI token.</p>
+    <p class="mt-4 text-sm" translate="no"><a class="text-violet-800" href="/api/v1/apps/{{.AppSlug}}/feed.json">/api/v1/apps/{{.AppSlug}}/feed.json</a></p>
+    <p class="mt-2 text-sm text-gray-600">Sparkle and Squirrel feeds are not implemented yet.</p>
+{{ end }}

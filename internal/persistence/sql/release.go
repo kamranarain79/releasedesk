@@ -36,13 +36,11 @@ func (r *releaseRepository) Save(release *release.Release) error {
 	return nil
 }
 
-func (r *releaseRepository) Update(release *release.Release) error {
-	_, err := r.engine.Update(release)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (r *releaseRepository) Update(rel *release.Release) error {
+	_, err := r.engine.ID(rel.ID).
+		Cols("target_channel", "status", "build_selection", "qa_notes").
+		Update(rel)
+	return err
 }
 
 func (r *releaseRepository) FindByAppIDAndChannel(appID int, channelID int) ([]release.BasicInfo, error) {
@@ -105,7 +103,7 @@ func (r *releaseRepository) GetByAppIDAndVersion(appID int, version string) (rel
 	// For each linked build, get the build info and add it to the Builds map
 	for _, linkedBuild := range linkedBuilds {
 		var buildInfo build.BasicInfo
-		has, err := r.engine.ID(linkedBuild.BuildID).Get(&buildInfo)
+		has, err := r.engine.Table("build").ID(linkedBuild.BuildID).Get(&buildInfo)
 		if err != nil {
 			return release.Release{}, err
 		}
@@ -145,7 +143,7 @@ func (r *releaseRepository) GetByID(id int) (release.Release, error) {
 	// For each linked build, get the build info and add it to the Builds map
 	for _, linkedBuild := range linkedBuilds {
 		var buildInfo build.BasicInfo
-		has, err := r.engine.ID(linkedBuild.BuildID).Get(&buildInfo)
+		has, err := r.engine.Table("build").ID(linkedBuild.BuildID).Get(&buildInfo)
 		if err != nil {
 			return release.Release{}, err
 		}
@@ -170,6 +168,56 @@ func (r *releaseRepository) LinkBuild(releaseID int, buildID int, os values.OS) 
 }
 
 // UnlinkBuild unlinks a build from a release for a specific OS
+func (r *releaseRepository) ReplaceLinks(releaseID int, links []release.LinkedBuilds) error {
+	session := r.engine.NewSession()
+	defer session.Close()
+	if err := session.Begin(); err != nil {
+		return err
+	}
+	if _, err := session.Where("release_id = ?", releaseID).Delete(&release.LinkedBuilds{}); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	for i := range links {
+		links[i].ReleaseID = releaseID
+		if _, err := session.Insert(&links[i]); err != nil {
+			_ = session.Rollback()
+			return err
+		}
+	}
+	return session.Commit()
+}
+
+func (r *releaseRepository) SetStatus(id int, status release.ReleaseStatus) error {
+	_, err := r.engine.Exec("UPDATE `release` SET status = ? WHERE id = ?", string(status), id)
+	return err
+}
+
+func (r *releaseRepository) Delete(id int) error {
+	session := r.engine.NewSession()
+	defer session.Close()
+	if err := session.Begin(); err != nil {
+		return err
+	}
+	if _, err := session.Exec("DELETE FROM changelog WHERE release_id = ?", id); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	if _, err := session.Exec("DELETE FROM test_method WHERE release_id = ?", id); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	if _, err := session.Exec("DELETE FROM linked_builds WHERE release_id = ?", id); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	if _, err := session.Exec("DELETE FROM `release` WHERE id = ?", id); err != nil {
+		_ = session.Rollback()
+		return err
+	}
+	return session.Commit()
+}
+
 func (r *releaseRepository) UnlinkBuild(releaseID int, buildID int, os values.OS) error {
 	linkedBuild := release.LinkedBuilds{
 		ReleaseID: releaseID,

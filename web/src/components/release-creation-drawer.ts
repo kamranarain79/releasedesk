@@ -4,6 +4,19 @@ import {encodeFormData} from "../utils";
 import {Ref, createRef, ref} from 'lit/directives/ref.js';
 import {map} from 'lit/directives/map.js';
 
+interface Channel {
+    ID: number;
+    Name: string;
+}
+
+interface BuildChoice {
+    BuildID: number;
+    OS: string;
+    Number: string;
+    Version: string;
+    Files: string;
+}
+
 @customElement('release-creation-drawer')
 export class ReleaseCreationDrawer extends LitElement {
     override createRenderRoot() {
@@ -15,6 +28,9 @@ export class ReleaseCreationDrawer extends LitElement {
 
     @property({type: Array})
     channels: Channel[] = [];
+
+    @property({type: Array})
+    builds: BuildChoice[] = [];
 
     @property({type: Boolean})
     showDrawer = false;
@@ -72,7 +88,7 @@ export class ReleaseCreationDrawer extends LitElement {
 
             <headless-drawer ?open="${this.showDrawer}"
                              @closed="${this.handleClose}"
-                             headerTitle="New Application">
+                             headerTitle="New release">
                 <form slot="body" id="app-creation-form" class="px-4 sm:px-6 pb-4"
                       @reset="${this.handleClose}"
                       @submit="${this.handleSubmit}">
@@ -100,6 +116,18 @@ export class ReleaseCreationDrawer extends LitElement {
                                 </select>
                             </div>
                         </div>
+                        <fieldset>
+                            <legend class="block text-sm/6 font-medium text-gray-900">Binaries</legend>
+                            <p class="mt-1 text-sm text-gray-600">Choose them now. The channel and this selection stay fixed after you save. Leave none selected to include builds uploaded with this version.</p>
+                            <div class="mt-3 space-y-2">
+                                ${this.builds.length ? map(this.builds, (build) => html`
+                                    <label class="flex items-start gap-2 text-sm text-gray-700">
+                                        <input type="checkbox" name="build" value="${build.BuildID}|${build.OS}">
+                                        <span>${build.OS} #${build.Number} · ${build.Version}${build.Files ? ` · ${build.Files}` : ''}</span>
+                                    </label>
+                                `) : html`<p class="text-sm text-gray-500">No builds yet. Files uploaded later with this version stay on this release.</p>`}
+                            </div>
+                        </fieldset>
                     </div>
 
                     ${this.submitFailed ? html`
@@ -122,7 +150,7 @@ export class ReleaseCreationDrawer extends LitElement {
           <button type="submit"
                   form="app-creation-form"
                   class="ml-4 inline-flex justify-center rounded-md bg-violet-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-800">
-            Save
+            Create
           </button>
         </span>
             </headless-drawer>

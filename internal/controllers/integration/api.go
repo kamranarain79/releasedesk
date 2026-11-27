@@ -5,25 +5,26 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	domainbuild "github.com/brewbits-co/releasedesk/internal/domains/build"
+	"github.com/brewbits-co/releasedesk/internal/domains/release"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/pkg/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 type fileItem struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
-	IsDir    bool   `json:"isDir"`
-	Kind     string `json:"kind"`
-	Platform string `json:"platform"`
-	Arch     string `json:"architecture,omitempty"`
-	Sha256   string `json:"sha256"`
-	URL      string `json:"url"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Size      int64  `json:"size"`
+	IsDir     bool   `json:"isDir"`
+	Kind      string `json:"kind"`
+	Platform  string `json:"platform"`
+	Arch      string `json:"architecture,omitempty"`
+	Sha256    string `json:"sha256"`
+	URL       string `json:"url"`
+	FlashHint string `json:"flashHint,omitempty"`
 }
 
 type resourceListing struct {
@@ -31,6 +32,20 @@ type resourceListing struct {
 	Path  string     `json:"path"`
 	IsDir bool       `json:"isDir"`
 	Items []fileItem `json:"items"`
+}
+
+func (c *controller) authorize(r *http.Request, slug string) (bool, int) {
+	entity, err := c.apps.GetBySlug(values.Slug(slug))
+	if err != nil {
+		return false, 0
+	}
+	if r.Context().Value("tokenGlobal") == true {
+		return true, entity.ID
+	}
+	if id, ok := r.Context().Value("tokenAppID").(int); ok && id == entity.ID {
+		return true, entity.ID
+	}
+	return false, 0
 }
 
 func (c *controller) ListApps(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +64,9 @@ func (c *controller) ListApps(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]appRow, 0, len(apps))
 	for _, application := range apps {
+		if id, ok := r.Context().Value("tokenAppID").(int); ok && application.ID != id {
+			continue
+		}
 		out = append(out, appRow{
 			Name:     application.Name,
 			Slug:     string(application.Slug),
@@ -64,19 +82,19 @@ func (c *controller) ListApps(w http.ResponseWriter, r *http.Request) {
 func (c *controller) GetRelease(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	version := chi.URLParam(r, "version")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	rel, err := c.releases.GetReleaseSummary(appData.AppID, version)
+	rel, err := c.releases.GetReleaseSummary(appID, version)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	notes, _ := c.releases.GetReleaseNotes(rel.ID)
 	plan, _ := c.releases.GetTestPlan(rel.ID)
-	files, _ := c.collectFiles(slug, version, appData.AppID)
+	files, _ := c.collectFiles(slug, version, appID)
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"app":         slug,
@@ -94,12 +112,12 @@ func (c *controller) GetRelease(w http.ResponseWriter, r *http.Request) {
 func (c *controller) ListReleaseFiles(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	version := chi.URLParam(r, "version")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	files, err := c.collectFiles(slug, version, appData.AppID)
+	files, err := c.collectFiles(slug, version, appID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -116,19 +134,19 @@ func (c *controller) DownloadReleaseFile(w http.ResponseWriter, r *http.Request)
 	slug := chi.URLParam(r, "slug")
 	version := chi.URLParam(r, "version")
 	name := chi.URLParam(r, "name")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	files, err := c.collectFiles(slug, version, appData.AppID)
+	files, err := c.collectFiles(slug, version, appID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	for _, item := range files {
 		if item.Name == name {
-			serveStoredFile(w, item.Sha256, item.Name)
+			c.serveStoredFile(w, item.Sha256, item.Name)
 			return
 		}
 	}
@@ -138,12 +156,12 @@ func (c *controller) DownloadReleaseFile(w http.ResponseWriter, r *http.Request)
 func (c *controller) GetReleaseNotes(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	version := chi.URLParam(r, "version")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	rel, err := c.releases.GetReleaseSummary(appData.AppID, version)
+	rel, err := c.releases.GetReleaseSummary(appID, version)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -159,12 +177,12 @@ func (c *controller) GetReleaseNotes(w http.ResponseWriter, r *http.Request) {
 func (c *controller) GetTestMethods(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	version := chi.URLParam(r, "version")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	rel, err := c.releases.GetReleaseSummary(appData.AppID, version)
+	rel, err := c.releases.GetReleaseSummary(appID, version)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -180,12 +198,12 @@ func (c *controller) GetTestMethods(w http.ResponseWriter, r *http.Request) {
 func (c *controller) LatestRelease(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	channelName := chi.URLParam(r, "channel")
-	appData, err := c.apps.GetCurrentAppData(values.Slug(slug))
-	if err != nil {
+	ok, appID := c.authorize(r, slug)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	channels, err := c.releases.GetReleaseChannels(appData.AppID)
+	channels, err := c.releases.GetReleaseChannels(appID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -201,21 +219,66 @@ func (c *controller) LatestRelease(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	releases, err := c.releases.ListReleasesByChannel(appData.AppID, channelID)
+	releases, err := c.releases.ListReleasesByChannel(appID, channelID)
 	if err != nil || len(releases) == 0 {
 		http.NotFound(w, r)
 		return
 	}
-	http.Redirect(w, r, "/api/v1/apps/"+slug+"/releases/"+releases[0].Version, http.StatusTemporaryRedirect)
+	version := ""
+	for _, item := range releases {
+		if item.Status == release.Published {
+			version = item.Version
+			break
+		}
+	}
+	if version == "" {
+		http.NotFound(w, r)
+		return
+	}
+	http.Redirect(w, r, "/api/v1/apps/"+slug+"/releases/"+version, http.StatusTemporaryRedirect)
 }
 
 func (c *controller) DownloadByChecksum(w http.ResponseWriter, r *http.Request) {
 	checksum := chi.URLParam(r, "checksum")
-	filename := checksum
-	if artifact, err := c.builds.GetArtifactByChecksum(checksum); err == nil {
-		filename = artifact.Filename
+	if !storage.ValidChecksum(checksum) {
+		http.Error(w, "Invalid checksum", http.StatusBadRequest)
+		return
 	}
-	serveStoredFile(w, checksum, filename)
+	filename := checksum
+	artifact, err := c.builds.GetArtifactByChecksum(checksum)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	filename = artifact.Filename
+	if id, ok := r.Context().Value("tokenAppID").(int); ok {
+		entity, err := c.apps.GetByID(id)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		data, err := c.apps.GetCurrentAppData(entity.Slug)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		full, err := c.builds.GetBuildByID(artifact.BuildID)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		allowed := false
+		for _, platformData := range data.Platforms {
+			if platformData.PlatformID == full.PlatformID {
+				allowed = true
+			}
+		}
+		if !allowed {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	c.serveStoredFile(w, checksum, filename)
 }
 
 func (c *controller) collectFiles(slug, version string, appID int) ([]fileItem, error) {
@@ -265,6 +328,15 @@ func (c *controller) collectFiles(slug, version string, appID int) ([]fileItem, 
 			addBuild(match.ID, platformData.OS)
 		}
 	}
+	hints := map[string]string{}
+	for _, platformData := range appData.Platforms {
+		if note := c.platforms.FlashNotes(platformData.PlatformID); note != "" {
+			hints[string(platformData.OS)] = note
+		}
+	}
+	for i := range items {
+		items[i].FlashHint = hints[items[i].Platform]
+	}
 	return items, nil
 }
 
@@ -282,19 +354,24 @@ func fileFromArtifact(slug, version string, os values.OS, artifact domainbuild.A
 	}
 }
 
-func serveStoredFile(w http.ResponseWriter, checksum, filename string) {
-	if len(checksum) < 2 {
+func (c *controller) serveStoredFile(w http.ResponseWriter, checksum, filename string) {
+	if !storage.ValidChecksum(checksum) {
 		http.Error(w, "Invalid checksum", http.StatusBadRequest)
 		return
 	}
-	path := filepath.Join(storage.StorageDir, checksum[:2], checksum)
+	path := storage.ConvertChecksumToPath(checksum)
 	file, err := os.Open(path)
 	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()
-	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	_ = c.builds.IncrementDownload(checksum)
+	safe := filename
+	if safe == "" || strings.ContainsAny(safe, "\"\\/") {
+		safe = "download"
+	}
+	w.Header().Set("Content-Disposition", `attachment; filename="`+safe+`"`)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = io.Copy(w, file)
 }

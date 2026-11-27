@@ -6,4 +6,5 @@ type PlatformRepository interface {
 	Save(platform *Platform) error
 	FindByAppID(appID int) ([]Platform, error)
 	GetByAppSlugAndOS(slug values.Slug, os values.OS) (Platform, error)
+	GetByID(id int) (Platform, error)
 }

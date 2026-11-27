@@ -7,11 +7,15 @@ import (
 
 type SessionData struct {
 	Username string
+	UserID   int
 }
 
 func NewSessionData(ctx context.Context) SessionData {
+	username, _ := ctx.Value("username").(string)
+	userID, _ := ctx.Value("userID").(int)
 	return SessionData{
-		Username: ctx.Value("username").(string),
+		Username: username,
+		UserID:   userID,
 	}
 }
 

@@ -3,9 +3,11 @@ package build
 import (
 	"errors"
 	"mime/multipart"
+	"os"
 	"path/filepath"
 	"strings"
 
+	domainaudit "github.com/brewbits-co/releasedesk/internal/domains/audit"
 	"github.com/brewbits-co/releasedesk/internal/domains/build"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/pkg/storage"
@@ -17,7 +19,7 @@ type UploadFile struct {
 	Kind   values.ArtifactKind
 }
 
-func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicInfo, files []UploadFile, Metadata map[string]string) (build.Build, error) {
+func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicInfo, files []UploadFile, Metadata map[string]string, opts UploadOptions) (build.Build, error) {
 	for _, item := range files {
 		if !isValidFileType(os, item.Header.Filename) {
 			return build.Build{}, errors.New("invalid file type for this platform")
@@ -29,7 +31,22 @@ func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicIn
 		return build.Build{}, err
 	}
 
+	exists, err := s.buildRepo.ExistsByNumber(platformEntity.ID, info.Number)
+	if err != nil {
+		return build.Build{}, err
+	}
+	if exists {
+		if !opts.Overwrite {
+			return build.Build{}, errors.New("build number already exists")
+		}
+		if err = s.buildRepo.DeleteByPlatformAndNumber(platformEntity.ID, info.Number); err != nil {
+			return build.Build{}, err
+		}
+	}
+
 	info.PlatformID = platformEntity.ID
+	info.CreatedBy = opts.Actor
+	info.Status = build.StatusUnpublished
 	buildEntity := build.NewBuild(info)
 	buildEntity.Metadata = Metadata
 
@@ -43,6 +60,9 @@ func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicIn
 		_ = file.Close()
 		if err != nil {
 			return build.Build{}, err
+		}
+		if opts.ExpectedSHA256 != "" && len(files) == 1 && !strings.EqualFold(opts.ExpectedSHA256, sha256Sum) {
+			return build.Build{}, errors.New("sha256 does not match uploaded file")
 		}
 
 		file, err = item.Header.Open()
@@ -69,8 +89,52 @@ func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicIn
 	if err != nil {
 		return build.Build{}, err
 	}
+	s.audits.Record(platformEntity.AppID, opts.Actor, "uploaded", domainaudit.BuildSubject(string(os), info.Number), "Uploaded "+string(os)+" build #"+info.Number)
 
 	return buildEntity, err
+}
+
+func (s *service) PublishBuild(platformID int, number int, actor string) error {
+	existing, err := s.buildRepo.GetByPlatformIDAndNumber(platformID, number)
+	if err != nil {
+		return err
+	}
+	if existing.Status == build.StatusPublished {
+		return nil
+	}
+	if existing.Status != "" && existing.Status != build.StatusUnpublished {
+		return errors.New("only an unpublished build can be published")
+	}
+	if err = s.buildRepo.SetStatus(existing.ID, build.StatusPublished); err != nil {
+		return err
+	}
+	if platformEntity, err := s.platformRepo.GetByID(platformID); err == nil {
+		s.audits.Record(platformEntity.AppID, actor, "published", domainaudit.BuildSubject(string(platformEntity.OS), existing.Number), "Published "+string(platformEntity.OS)+" build #"+existing.Number)
+	}
+	return nil
+}
+
+func (s *service) DeleteBuild(platformID int, number int, actor string) error {
+	existing, err := s.buildRepo.GetByPlatformIDAndNumber(platformID, number)
+	if err != nil {
+		return err
+	}
+	platformEntity, _ := s.platformRepo.GetByID(platformID)
+	checksums, err := s.buildRepo.DeleteByID(existing.ID)
+	if err != nil {
+		return err
+	}
+	if platformEntity.AppID != 0 {
+		s.audits.Record(platformEntity.AppID, actor, "deleted", domainaudit.BuildSubject(string(platformEntity.OS), existing.Number), "Deleted "+string(platformEntity.OS)+" build #"+existing.Number)
+	}
+	for _, checksum := range checksums {
+		remaining, err := s.buildRepo.CountArtifactsByChecksum(checksum)
+		if err != nil || remaining > 0 || !storage.ValidChecksum(checksum) {
+			continue
+		}
+		_ = os.Remove(storage.ConvertChecksumToPath(checksum))
+	}
+	return nil
 }
 
 func isValidFileType(os values.OS, fileName string) bool {
