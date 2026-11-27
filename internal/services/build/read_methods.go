@@ -19,3 +19,15 @@ func (s *service) GetBuildDetails(platformID int, number int) (build.Build, erro
 
 	return buildEntity, err
 }
+
+func (s *service) GetBuildByID(id int) (build.Build, error) {
+	return s.buildRepo.GetByID(id)
+}
+
+func (s *service) GetArtifactByChecksum(checksum string) (build.Artifact, error) {
+	return s.buildRepo.GetArtifactByChecksum(checksum)
+}
+
+func (s *service) FindByPlatformAndVersion(platformID int, version string) ([]build.BasicInfo, error) {
+	return s.buildRepo.FindByPlatformIDAndVersion(platformID, version)
+}

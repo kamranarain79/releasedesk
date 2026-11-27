@@ -14,6 +14,8 @@
                          {{ if eq .CurrentPlatform.OS "Linux" }}<i
                                  class="fa-brands fa-linux text-amber-500"></i>{{ end }}
                          {{ if eq .CurrentPlatform.OS "macOS" }}<i class="macos"></i>{{ end }}
+                         {{ if eq .CurrentPlatform.OS "ESP32" }}<i class="fa-solid fa-microchip text-orange-600"></i>{{ end }}
+                         {{ if eq .CurrentPlatform.OS "STM32" }}<i class="fa-solid fa-microchip text-indigo-600"></i>{{ end }}
                          {{ if eq .CurrentPlatform.OS "Other" }}<i
                                  class="fa-solid fa-file-code text-gray-700"></i>{{ end }}
                     </span>

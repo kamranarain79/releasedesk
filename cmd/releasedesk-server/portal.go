@@ -25,6 +25,8 @@ type portalApp struct {
 	HasWindows  bool
 	HasLinux    bool
 	HasMacOS    bool
+	HasESP32    bool
+	HasSTM32    bool
 }
 
 func buildPortal(container *dig.Container) *http.Server {
@@ -74,6 +76,8 @@ func renderPortalHome(w http.ResponseWriter, r *http.Request, appService appSrv.
 			HasWindows:  application.HasWindows,
 			HasLinux:    application.HasLinux,
 			HasMacOS:    application.HasMacOS,
+			HasESP32:    application.HasESP32,
+			HasSTM32:    application.HasSTM32,
 		})
 	}
 

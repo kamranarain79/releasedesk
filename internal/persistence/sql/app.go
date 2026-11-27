@@ -122,6 +122,10 @@ func (r *appRepository) GetPlatformAvailability(app *app.App) error {
 			app.HasLinux = true
 		case "macOS":
 			app.HasMacOS = true
+		case "ESP32":
+			app.HasESP32 = true
+		case "STM32":
+			app.HasSTM32 = true
 		}
 	}
 

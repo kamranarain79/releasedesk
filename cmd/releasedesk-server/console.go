@@ -4,6 +4,7 @@ import (
 	"github.com/brewbits-co/releasedesk/internal/controllers/app"
 	"github.com/brewbits-co/releasedesk/internal/controllers/auth"
 	"github.com/brewbits-co/releasedesk/internal/controllers/build"
+	"github.com/brewbits-co/releasedesk/internal/controllers/integration"
 	"github.com/brewbits-co/releasedesk/internal/controllers/misc"
 	"github.com/brewbits-co/releasedesk/internal/controllers/platform"
 	"github.com/brewbits-co/releasedesk/internal/controllers/release"
@@ -42,6 +43,7 @@ func buildConsole(container *dig.Container) *http.Server {
 		platformCtrl platform.PlatformController,
 		releaseCtrl release.ReleaseController,
 		buildCtrl build.BuildController,
+		integrationCtrl integration.Controller,
 	) {
 		// Public Routes
 		router.Group(func(r chi.Router) {
@@ -84,6 +86,7 @@ func buildConsole(container *dig.Container) *http.Server {
 			r.Get("/dashboard/{slug}/releases", releaseCtrl.RenderReleaseList)
 			r.Get("/dashboard/{slug}/releases/{version}", releaseCtrl.RenderReleaseSummary)
 			r.Get("/dashboard/{slug}/releases/{version}/release-notes", releaseCtrl.RenderReleaseNotes)
+			r.Get("/dashboard/{slug}/releases/{version}/test-methods", releaseCtrl.RenderTestMethods)
 			r.Get("/dashboard/{slug}/platforms/{platform}/builds", buildCtrl.RenderBuildList)
 			r.Get("/dashboard/{slug}/platforms/{platform}/builds/{number}", buildCtrl.RenderBuildDetails)
 			r.Get("/dashboard/{slug}/platforms/{platform}/builds/{number}/metadata", buildCtrl.RenderBuildMetadata)
@@ -95,6 +98,7 @@ func buildConsole(container *dig.Container) *http.Server {
 			r.Post("/internal/apps/{slug}/releases", releaseCtrl.HandleCreateRelease)
 			r.Put("/internal/releases/{id}", releaseCtrl.HandleUpdateBasicInfo)
 			r.Post("/internal/releases/{id}/release-notes", releaseCtrl.HandleSaveReleaseNotes)
+			r.Post("/internal/releases/{id}/test-methods", releaseCtrl.HandleSaveTestPlan)
 			r.Post("/internal/apps/{slug}/platforms/{platform}/builds", buildCtrl.HandleBuildUpload)
 			r.Get("/internal/artifacts/{checksum}", buildCtrl.HandleArtifactDownload)
 		})
@@ -104,6 +108,14 @@ func buildConsole(container *dig.Container) *http.Server {
 			r.Use(middlewares.APITokenAuthorization(authService))
 
 			r.Post("/api/apps/{slug}/platforms/{platform}/builds", buildCtrl.HandleBuildUpload)
+			r.Get("/api/v1/apps", integrationCtrl.ListApps)
+			r.Get("/api/v1/apps/{slug}/releases/{version}", integrationCtrl.GetRelease)
+			r.Get("/api/v1/apps/{slug}/releases/{version}/files", integrationCtrl.ListReleaseFiles)
+			r.Get("/api/v1/apps/{slug}/releases/{version}/files/{name}", integrationCtrl.DownloadReleaseFile)
+			r.Get("/api/v1/apps/{slug}/releases/{version}/notes", integrationCtrl.GetReleaseNotes)
+			r.Get("/api/v1/apps/{slug}/releases/{version}/test-methods", integrationCtrl.GetTestMethods)
+			r.Get("/api/v1/apps/{slug}/channels/{channel}/latest", integrationCtrl.LatestRelease)
+			r.Get("/api/v1/files/{checksum}", integrationCtrl.DownloadByChecksum)
 		})
 	})
 	if err != nil {

@@ -20,13 +20,13 @@ const (
 // Changelog represents a single changelog entry in release notes
 type Changelog struct {
 	// ID is the unique identifier of a Changelog entry
-	ID int `xorm:"pk autoincr"`
+	ID int `xorm:"pk autoincr" json:"id"`
 	// ReleaseID is the identifier of the release that this changelog belongs to
-	ReleaseID int `xorm:"not null"`
+	ReleaseID int `xorm:"not null" json:"releaseId"`
 	// Text is the description of the change
-	Text string `xorm:"not null"`
+	Text string `xorm:"not null" json:"text"`
 	// ChangeType indicates the type of change
-	ChangeType ChangeType `xorm:"not null"`
+	ChangeType ChangeType `xorm:"not null" json:"changeType"`
 }
 
 // NewReleaseNotes creates a new ReleaseNotes entity
@@ -41,11 +41,11 @@ func NewReleaseNotes(releaseID int, text string) ReleaseNotes {
 
 // ReleaseNotes represents the release notes for a specific release
 type ReleaseNotes struct {
-	validator.BaseValidator `xorm:"-"`
+	validator.BaseValidator `xorm:"-" json:"-"`
 	// ReleaseID is the identifier of the release that these notes belong to
-	ReleaseID int
+	ReleaseID int `json:"releaseId"`
 	// Text is the general description or overview of the release
-	Text string
+	Text string `json:"text"`
 	// Changelogs is a list of changelog entries for this release
-	Changelogs []Changelog `xorm:"-"`
+	Changelogs []Changelog `xorm:"-" json:"changelogs"`
 }

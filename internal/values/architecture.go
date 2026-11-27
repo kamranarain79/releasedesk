@@ -13,4 +13,8 @@ const (
 	ARM64 Architecture = "ARM64"
 	// ARM represents the 32-bit ARM architecture (common in older ARM devices).
 	ARM Architecture = "ARM"
+	// Xtensa is used by classic ESP32 chips.
+	Xtensa Architecture = "Xtensa"
+	// RISCV is used by ESP32-C3/C6 and similar.
+	RISCV Architecture = "RISC-V"
 )

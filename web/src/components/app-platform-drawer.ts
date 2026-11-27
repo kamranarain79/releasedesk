@@ -154,6 +154,37 @@ export class AppPlatformDrawer extends LitElement {
                                         </div>
                                         <div class="pl-7 text-sm/6" translate="no">
                                             <label for="privacy-private-to-project" class="font-medium text-gray-900">Linux</label>
+                                            <p class="text-xs text-gray-500">Packages and RAUC bundles (.raucb)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="relative flex items-start">
+                                        <div class="absolute flex h-6 items-center">
+                                            <input id="OS"
+                                                   name="OS"
+                                                   value="ESP32"
+                                                   type="radio"
+                                                   class="size-4 border-gray-300 text-violet-800 focus:ring-violet-800">
+                                        </div>
+                                        <div class="pl-7 text-sm/6" translate="no">
+                                            <label class="font-medium text-gray-900">ESP32</label>
+                                            <p class="text-xs text-gray-500">Firmware .bin, bootloader, partition table</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="relative flex items-start">
+                                        <div class="absolute flex h-6 items-center">
+                                            <input id="OS"
+                                                   name="OS"
+                                                   value="STM32"
+                                                   type="radio"
+                                                   class="size-4 border-gray-300 text-violet-800 focus:ring-violet-800">
+                                        </div>
+                                        <div class="pl-7 text-sm/6" translate="no">
+                                            <label class="font-medium text-gray-900">STM32</label>
+                                            <p class="text-xs text-gray-500">Firmware .bin / Intel HEX</p>
                                         </div>
                                     </div>
                                 </div>

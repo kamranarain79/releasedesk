@@ -51,6 +51,16 @@
                 <i class="macos"></i> macOS
               </span>
               {{end}}
+              {{if .PlatformAvailability.HasESP32}}
+              <span class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-orange-600 ring-1 ring-inset ring-gray-200 mr-1" translate="no">
+                <i class="fa-solid fa-microchip"></i> ESP32
+              </span>
+              {{end}}
+              {{if .PlatformAvailability.HasSTM32}}
+              <span class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-indigo-600 ring-1 ring-inset ring-gray-200 mr-1" translate="no">
+                <i class="fa-solid fa-microchip"></i> STM32
+              </span>
+              {{end}}
             </p>
           </div>
         </div>

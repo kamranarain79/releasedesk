@@ -135,6 +135,24 @@ func applyMigrations(engine *xorm.Engine) error {
 				return nil
 			},
 		},
+		{
+			ID: "202611251800",
+			Migrate: func(tx *xorm.Engine) error {
+				type Release struct {
+					QANotes string `xorm:"longtext qa_notes"`
+				}
+				if err := tx.Sync2(&Release{}, &release.TestMethod{}, &build.Artifact{}); err != nil {
+					return err
+				}
+				_, _ = tx.Exec("UPDATE artifact SET kind = 'firmware' WHERE kind IS NULL OR kind = ''")
+				_, _ = tx.Exec("DROP INDEX IF EXISTS UQE_artifact_artifact_uidx")
+				_, _ = tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UQE_artifact_artifact_uidx ON artifact (build_id, architecture, kind)")
+				return nil
+			},
+			Rollback: func(tx *xorm.Engine) error {
+				return tx.DropTables(&release.TestMethod{})
+			},
+		},
 	}
 
 	m := migrate.New(engine, &migrate.Options{

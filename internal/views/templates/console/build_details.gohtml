@@ -14,6 +14,8 @@
                          {{ if eq .CurrentPlatform.OS "Linux" }}<i
                                  class="fa-brands fa-linux text-amber-500"></i>{{ end }}
                          {{ if eq .CurrentPlatform.OS "macOS" }}<i class="macos"></i>{{ end }}
+                         {{ if eq .CurrentPlatform.OS "ESP32" }}<i class="fa-solid fa-microchip text-orange-600"></i>{{ end }}
+                         {{ if eq .CurrentPlatform.OS "STM32" }}<i class="fa-solid fa-microchip text-indigo-600"></i>{{ end }}
                     </span>
                     Build #{{ .Build.BasicInfo.Number }}
                 </h3>
@@ -105,6 +107,7 @@
                 </svg>
                 <div class="ml-4 flex min-w-0 flex-1 gap-2">
                     <span class="truncate font-medium text-violet-900">{{.Storable.Filename}}</span>
+                    <span class="shrink-0 text-gray-400">{{.Kind}}</span>
                     <span class="shrink-0 text-gray-400">{{.Architecture}}</span>
                 </div>
             </div>

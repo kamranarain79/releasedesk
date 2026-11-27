@@ -73,6 +73,49 @@ func (r *buildRepository) FindByPlatformID(platformID int) ([]build.BasicInfo, e
 	return builds, nil
 }
 
+func (r *buildRepository) FindByPlatformIDAndVersion(platformID int, version string) ([]build.BasicInfo, error) {
+	var builds []build.BasicInfo
+	err := r.engine.Desc("created_at").Table("build").Where("platform_id = ? AND version = ?", platformID, version).Find(&builds)
+	if err != nil {
+		return nil, err
+	}
+	for i := range builds {
+		builds[i].FormatAuditable()
+	}
+	return builds, nil
+}
+
+func (r *buildRepository) GetByID(id int) (build.Build, error) {
+	var buildDetails build.Build
+	exist, err := r.engine.ID(id).Get(&buildDetails)
+	if err != nil {
+		return build.Build{}, err
+	}
+	if !exist {
+		return build.Build{}, sql.ErrNoRows
+	}
+	buildDetails.Auditable.FormatAuditable()
+
+	var artifacts []build.Artifact
+	if err = r.engine.Where("build_id = ?", buildDetails.ID).Find(&artifacts); err != nil {
+		return build.Build{}, err
+	}
+	buildDetails.Artifacts = artifacts
+	return buildDetails, nil
+}
+
+func (r *buildRepository) GetArtifactByChecksum(checksum string) (build.Artifact, error) {
+	var artifact build.Artifact
+	has, err := r.engine.Where("sha256 = ?", checksum).Get(&artifact)
+	if err != nil {
+		return build.Artifact{}, err
+	}
+	if !has {
+		return build.Artifact{}, sql.ErrNoRows
+	}
+	return artifact, nil
+}
+
 func (r *buildRepository) GetByPlatformIDAndNumber(platformID int, number int) (build.Build, error) {
 	var buildDetails build.Build
 

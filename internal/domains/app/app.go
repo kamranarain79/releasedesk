@@ -45,6 +45,8 @@ type PlatformAvailability struct {
 	HasWindows bool
 	HasLinux   bool
 	HasMacOS   bool
+	HasESP32   bool
+	HasSTM32   bool
 }
 
 type App struct {

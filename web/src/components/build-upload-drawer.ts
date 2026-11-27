@@ -9,20 +9,35 @@ export class BuildUploadDrawer extends LitElement {
         return this;
     }
 
-    extensionsByPlatform = {
+    extensionsByPlatform: Record<string, string[]> = {
         "Windows": [".appx", ".appxbundle", ".appxupload", ".msix", ".msixbundle", ".msixupload", ".exe", ".zip", ".msi"],
         "macOS": [".zip", ".platform.zip", ".dmg", ".pkg"],
-        "Linux": [".AppImage", ".deb", ".rpm",  ".tgz", ".gz", ".snap", ".flatpak"],
+        "Linux": [".AppImage", ".deb", ".rpm", ".tgz", ".gz", ".snap", ".flatpak", ".raucb", ".img", ".wic"],
         "Android": [".apk", ".aab"],
         "iOS": [".ipa"],
+        "ESP32": [".bin", ".elf", ".csv", ".json"],
+        "STM32": [".bin", ".hex", ".elf", ".srec"],
     };
 
-    archsByPlatform = {
-        "Windows": ["x86", "x64"],
-        "macOS": ["x64", "ARM64"],
-        "Linux": ["x86", "x64", "ARM", "ARM64"],
-        "Android": [""],
-        "iOS": [""],
+    slotsByPlatform: Record<string, { name: string, label: string }[]> = {
+        "Windows": [{name: "File_x86", label: "x86"}, {name: "File_x64", label: "x64"}],
+        "macOS": [{name: "File_x64", label: "x64"}, {name: "File_ARM64", label: "ARM64"}],
+        "Linux": [
+            {name: "File", label: "Package / image"},
+            {name: "File_rauc", label: "RAUC bundle (.raucb)"},
+        ],
+        "Android": [{name: "File", label: "APK / AAB"}],
+        "iOS": [{name: "File", label: "IPA"}],
+        "ESP32": [
+            {name: "File_firmware", label: "Firmware (.bin)"},
+            {name: "File_bootloader", label: "Bootloader (.bin)"},
+            {name: "File_partition", label: "Partition table (.bin / .csv)"},
+            {name: "File_application", label: "Application image (.bin)"},
+        ],
+        "STM32": [
+            {name: "File_firmware", label: "Firmware (.bin)"},
+            {name: "File_hex", label: "Intel HEX (.hex)"},
+        ],
     };
 
     @property({type: String})
@@ -112,29 +127,19 @@ export class BuildUploadDrawer extends LitElement {
                         </div>
 
                         <div>
-                            ${
-                                    // @ts-ignore 
-                                    map(this.archsByPlatform[this.platform], (arch) => html`
-                                        <div class="mt-2">
-                                            <label for="File${arch ? '_' + arch : ''}"
-                                                   class="block text-sm/6 font-medium text-gray-900">Artifact
-                                                ${arch}</label>
-                                            <input type="file"
-                                                   name="File${arch ? '_' + arch : ''}"
-                                                   id="File${arch ? '_' + arch : ''}"
-                                                   accept="${
-                                                           // @ts-ignore 
-                                                           this.extensionsByPlatform[this.platform].join(',')
-                                                   }"
-                                                   class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-800 sm:text-sm/6"
-                                                   maxlength="255"
-                                                   autocomplete="off">
-                                            <p class="text-xs/5 text-gray-600">Upload ${
-                                                    // @ts-ignore 
-                                                    this.extensionsByPlatform[this.platform].join(', ')
-                                            } file(s)</p>
-                                        </div>`
-                                    )}
+                            ${map(this.slotsByPlatform[this.platform] || [{name: "File", label: "Artifact"}], (slot) => html`
+                                <div class="mt-2">
+                                    <label for="${slot.name}"
+                                           class="block text-sm/6 font-medium text-gray-900">${slot.label}</label>
+                                    <input type="file"
+                                           name="${slot.name}"
+                                           id="${slot.name}"
+                                           accept="${(this.extensionsByPlatform[this.platform] || []).join(',')}"
+                                           class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+                                           autocomplete="off">
+                                    <p class="text-xs/5 text-gray-600">Accepted: ${(this.extensionsByPlatform[this.platform] || []).join(', ')}</p>
+                                </div>`
+                            )}
                         </div>
                     </div>
 

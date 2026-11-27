@@ -25,6 +25,8 @@
               {{ if .HasWindows }}<span class="rounded-full bg-sky-50 px-2 py-1 font-medium text-sky-700 ring-1 ring-inset ring-sky-200">Windows</span>{{ end }}
               {{ if .HasLinux }}<span class="rounded-full bg-amber-50 px-2 py-1 font-medium text-amber-700 ring-1 ring-inset ring-amber-200">Linux</span>{{ end }}
               {{ if .HasMacOS }}<span class="rounded-full bg-blue-50 px-2 py-1 font-medium text-blue-700 ring-1 ring-inset ring-blue-200">macOS</span>{{ end }}
+              {{ if .HasESP32 }}<span class="rounded-full bg-orange-50 px-2 py-1 font-medium text-orange-700 ring-1 ring-inset ring-orange-200">ESP32</span>{{ end }}
+              {{ if .HasSTM32 }}<span class="rounded-full bg-indigo-50 px-2 py-1 font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">STM32</span>{{ end }}
             </p>
             <p class="mt-4 text-xs text-gray-500">Downloads for this app are not published on the portal in this version. Use the console to manage builds.</p>
           </li>

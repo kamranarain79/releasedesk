@@ -72,11 +72,13 @@ func (s *service) GetCurrentAppData(slug values.Slug) (session.CurrentAppData, e
 
 	// Desired platform order
 	platformOrder := map[values.OS]int{
-		values.Android: 1,
-		values.IOS:     2,
-		values.Windows: 3,
-		values.MacOS:   4,
-		values.Linux:   5,
+		values.ESP32:   1,
+		values.STM32:   2,
+		values.Linux:   3,
+		values.Android: 4,
+		values.IOS:     5,
+		values.Windows: 6,
+		values.MacOS:   7,
 	}
 
 	// Sorting based on the platform order

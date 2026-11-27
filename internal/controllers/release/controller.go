@@ -10,8 +10,10 @@ type ReleaseController interface {
 	RenderReleaseList(w http.ResponseWriter, r *http.Request)
 	RenderReleaseSummary(w http.ResponseWriter, r *http.Request)
 	RenderReleaseNotes(w http.ResponseWriter, r *http.Request)
+	RenderTestMethods(w http.ResponseWriter, r *http.Request)
 	HandleCreateRelease(w http.ResponseWriter, r *http.Request)
 	HandleSaveReleaseNotes(w http.ResponseWriter, r *http.Request)
+	HandleSaveTestPlan(w http.ResponseWriter, r *http.Request)
 	HandleUpdateBasicInfo(w http.ResponseWriter, r *http.Request)
 }
 

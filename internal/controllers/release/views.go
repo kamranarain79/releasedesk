@@ -143,3 +143,41 @@ func (c *releaseController) RenderReleaseNotes(w http.ResponseWriter, r *http.Re
 
 	views.Execute(w, tmpl, data)
 }
+
+func (c *releaseController) RenderTestMethods(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	currentApp, err := c.appService.GetCurrentAppData(values.Slug(slug))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	version := chi.URLParam(r, "version")
+	releaseSummary, err := c.service.GetReleaseSummary(currentApp.AppID, version)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	plan, err := c.service.GetTestPlan(releaseSummary.ID)
+	if err != nil {
+		plan = release.TestPlan{ReleaseID: releaseSummary.ID}
+	}
+
+	tmpl, err := views.ParseTemplate(views.SidebarLayout, "templates/console/release_test_methods.gohtml")
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	data := TestMethodsData{
+		CurrentPage:    "Releases",
+		SessionData:    session.NewSessionData(r.Context()),
+		CurrentAppData: currentApp,
+		Release:        releaseSummary,
+		TestPlan:       plan,
+	}
+
+	views.Execute(w, tmpl, data)
+}

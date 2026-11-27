@@ -2,18 +2,25 @@ package build
 
 import (
 	"errors"
+	"mime/multipart"
+	"path/filepath"
+	"strings"
+
 	"github.com/brewbits-co/releasedesk/internal/domains/build"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/pkg/storage"
-	"mime/multipart"
-	"path/filepath"
 )
 
-func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicInfo, files map[values.Architecture]*multipart.FileHeader, Metadata map[string]string) (build.Build, error) {
-	for _, header := range files {
-		validFileType := isValidFileType(os, header.Filename)
-		if !validFileType {
-			return build.Build{}, errors.New("invalid file type")
+type UploadFile struct {
+	Header *multipart.FileHeader
+	Arch   values.Architecture
+	Kind   values.ArtifactKind
+}
+
+func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicInfo, files []UploadFile, Metadata map[string]string) (build.Build, error) {
+	for _, item := range files {
+		if !isValidFileType(os, item.Header.Filename) {
+			return build.Build{}, errors.New("invalid file type for this platform")
 		}
 	}
 
@@ -26,33 +33,40 @@ func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicIn
 	buildEntity := build.NewBuild(info)
 	buildEntity.Metadata = Metadata
 
-	for arch, header := range files {
-		file, err := header.Open()
+	for _, item := range files {
+		file, err := item.Header.Open()
 		if err != nil {
 			return build.Build{}, errors.New("failed to open file")
 		}
-		// TODO: Fix this defer
-		defer file.Close()
 
 		md5Sum, sha256Sum, sha512Sum, err := storage.CalculateChecksums(file)
+		_ = file.Close()
 		if err != nil {
 			return build.Build{}, err
 		}
 
+		file, err = item.Header.Open()
+		if err != nil {
+			return build.Build{}, errors.New("failed to open file")
+		}
 		filePath := storage.ConvertChecksumToPath(sha256Sum)
 		err = storage.SaveFile(filePath, file)
+		_ = file.Close()
 		if err != nil {
 			return build.Build{}, err
 		}
 
-		artifact := build.NewArtifact(header.Filename, header.Size, arch, md5Sum, sha256Sum, sha512Sum)
+		kind := item.Kind
+		if kind == "" {
+			kind = kindFromFilename(os, item.Header.Filename)
+		}
 
+		artifact := build.NewArtifact(item.Header.Filename, item.Header.Size, item.Arch, kind, md5Sum, sha256Sum, sha512Sum)
 		buildEntity.Artifacts = append(buildEntity.Artifacts, artifact)
 	}
 
 	err = s.buildRepo.Save(&buildEntity)
 	if err != nil {
-		// TODO: Delete file
 		return build.Build{}, err
 	}
 
@@ -60,19 +74,29 @@ func (s *service) UploadBuild(slug values.Slug, os values.OS, info build.BasicIn
 }
 
 func isValidFileType(os values.OS, fileName string) bool {
-	allowedExtensions := map[values.OS][]string{
-		values.Windows: {".appx", ".appxbundle", ".appxupload", ".msix", ".msixbundle", ".msixupload", ".exe", ".zip", ".msi"},
-		values.MacOS:   {".zip", ".platform.zip", ".dmg", ".pkg"},
-		values.Linux:   {".AppImage", ".deb", ".rpm", ".tgz", ".gz", ".snap", ".flatpak"},
-		values.Android: {".apk", ".aab"},
-		values.IOS:     {".ipa"},
-	}
-
-	ext := filepath.Ext(fileName)
-	for _, allowedExt := range allowedExtensions[os] {
-		if ext == allowedExt {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	for _, allowedExt := range values.AllowedExtensions(os) {
+		if strings.ToLower(allowedExt) == ext {
 			return true
 		}
 	}
 	return false
+}
+
+func kindFromFilename(os values.OS, filename string) values.ArtifactKind {
+	lower := strings.ToLower(filename)
+	switch {
+	case strings.Contains(lower, "bootloader"):
+		return values.KindBootloader
+	case strings.Contains(lower, "partition"):
+		return values.KindPartition
+	case strings.HasSuffix(lower, ".hex") || strings.HasSuffix(lower, ".srec"):
+		return values.KindHex
+	case strings.HasSuffix(lower, ".raucb"):
+		return values.KindRAUC
+	case os.IsFirmware() && strings.Contains(lower, "app"):
+		return values.KindApplication
+	default:
+		return values.KindFirmware
+	}
 }

@@ -1,0 +1,64 @@
+{{ define "content" }}
+    {{- /*gotype: github.com/brewbits-co/releasedesk/internal/controllers/release.TestMethodsData*/ -}}
+    <div class="relative border-b border-gray-200 pb-5 sm:pb-0">
+        <div class="md:flex md:items-center md:justify-between">
+            <div>
+                <h3 class="text-xl font-semibold text-gray-900">Release {{.Release.BasicInfo.Version}}</h3>
+            </div>
+        </div>
+        <div class="mt-4">
+            <nav class="-mb-px flex space-x-8">
+                <a href="/dashboard/{{.CurrentAppData.AppSlug}}/releases/{{.Release.BasicInfo.Version}}"
+                   class="whitespace-nowrap border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    Summary
+                </a>
+                <a href="/dashboard/{{.CurrentAppData.AppSlug}}/releases/{{.Release.BasicInfo.Version}}/release-notes"
+                   class="whitespace-nowrap border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    Release Notes
+                </a>
+                <a href="/dashboard/{{.CurrentAppData.AppSlug}}/releases/{{.Release.BasicInfo.Version}}/test-methods"
+                   class="whitespace-nowrap border-b-2 border-violet-500 px-1 pb-4 text-sm font-medium text-violet-600"
+                   aria-current="page">
+                    QA Tests
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="rounded-lg bg-white shadow p-6 mt-4">
+        <p class="mb-4 text-sm text-gray-600">
+            These methods are what QA follows for this version. Production flashing still goes through Filebrowser;
+            the Python tool can pull this plan from the API together with the firmware files.
+        </p>
+        <form action="/internal/releases/{{.Release.ID}}/test-methods" method="POST">
+            <label for="qa-overview" class="block text-sm font-medium text-gray-900">QA overview</label>
+            <textarea rows="4" name="qa-overview" id="qa-overview"
+                      class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-violet-600 sm:text-sm/6"
+                      placeholder="What should QA verify on this release?">{{.TestPlan.Overview}}</textarea>
+
+            <fieldset class="mt-6">
+                <legend class="text-sm font-medium text-violet-900 mb-4">Test methods</legend>
+                {{range .TestPlan.Methods}}
+                    <div class="mb-4 rounded-md border border-gray-200 p-4 space-y-3">
+                        <input type="text" name="Title" value="{{.Title}}" required
+                               placeholder="Title (e.g. Flash ESP32 and boot)"
+                               class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                        <textarea name="Steps" rows="3" placeholder="Steps"
+                                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">{{.Steps}}</textarea>
+                        <input type="text" name="ExpectedResult" value="{{.ExpectedResult}}"
+                               placeholder="Expected result"
+                               class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                    </div>
+                {{end}}
+                <test-method-list></test-method-list>
+            </fieldset>
+
+            <div class="mt-4 flex justify-end">
+                <button type="submit"
+                        class="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+{{ end }}

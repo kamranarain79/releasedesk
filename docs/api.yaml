@@ -1,9 +1,60 @@
 openapi: 3.1.0
 info:
-  title: ReleaseDesk Console Public API
-  description: Title
+  title: ReleaseDesk integration API
+  description: Token-auth API for the production Python tool (Filebrowser-compatible file listing plus release notes and QA tests).
   version: 1.0.0
 servers:
-  - url: 'http://localhost:8080/api'
+  - url: 'http://localhost:8080'
+security:
+  - bearerAuth: []
 paths:
-
+  /api/v1/apps:
+    get:
+      summary: List applications
+      responses:
+        '200':
+          description: Application list
+  /api/v1/apps/{slug}/releases/{version}:
+    get:
+      summary: Release bundle (notes, QA tests, files)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+        - in: path
+          name: version
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Bundle JSON
+  /api/v1/apps/{slug}/releases/{version}/files:
+    get:
+      summary: Filebrowser-style directory listing
+      responses:
+        '200':
+          description: Resource listing with items[]
+  /api/v1/apps/{slug}/releases/{version}/notes:
+    get:
+      summary: Release notes and changelog
+      responses:
+        '200':
+          description: Notes JSON
+  /api/v1/apps/{slug}/releases/{version}/test-methods:
+    get:
+      summary: QA test plan
+      responses:
+        '200':
+          description: Test plan JSON
+  /api/apps/{slug}/platforms/{platform}/builds:
+    post:
+      summary: Upload a build (firmware, RAUC, or application package)
+      responses:
+        '201':
+          description: Created
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

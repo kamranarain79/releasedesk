@@ -1,29 +1,29 @@
 package build
 
 import (
-	"github.com/brewbits-co/releasedesk/internal/domains/build"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	domainbuild "github.com/brewbits-co/releasedesk/internal/domains/build"
+	buildsrv "github.com/brewbits-co/releasedesk/internal/services/build"
 	"github.com/brewbits-co/releasedesk/internal/values"
 	"github.com/brewbits-co/releasedesk/pkg/fields"
 	"github.com/brewbits-co/releasedesk/pkg/storage"
 	"github.com/brewbits-co/releasedesk/pkg/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 func (c *buildController) HandleBuildUpload(w http.ResponseWriter, r *http.Request) {
-	// Parse the incoming multipart form
-	r.ParseMultipartForm(10 << 20) // Limit upload size to ~10MB
+	_ = r.ParseMultipartForm(512 << 20)
 
 	slug := chi.URLParam(r, "slug")
 	platform := chi.URLParam(r, "platform")
 
 	var buildUploadRequest = struct {
-		build.BasicInfo
+		domainbuild.BasicInfo
 		fields.Extendable
 	}{}
 
@@ -34,33 +34,36 @@ func (c *buildController) HandleBuildUpload(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Allow multiple file upload for certain platforms than need different architectures (ex: Windows)
-	// The field name should by default File and for specify an architecture File_x86, File_x64, etc.
-	var files = make(map[values.Architecture]*multipart.FileHeader)
+	var files []buildsrv.UploadFile
+	appendFile := func(formName string, arch values.Architecture, kind values.ArtifactKind) {
+		if r.MultipartForm == nil {
+			return
+		}
+		if fhs := r.MultipartForm.File[formName]; len(fhs) > 0 {
+			files = append(files, buildsrv.UploadFile{Header: fhs[0], Arch: arch, Kind: kind})
+		}
+	}
 
-	if fhs := r.MultipartForm.File["File"]; len(fhs) > 0 {
-		fileHeader := fhs[0]
-		files[values.NoArch] = fileHeader
+	defaultKind := values.KindApplication
+	if values.OS(platform).IsFirmware() {
+		defaultKind = values.KindFirmware
 	}
-	if fhs := r.MultipartForm.File["File_x86"]; len(fhs) > 0 {
-		fileHeader := fhs[0]
-		files[values.X86] = fileHeader
-	}
-	if fhs := r.MultipartForm.File["File_x64"]; len(fhs) > 0 {
-		fileHeader := fhs[0]
-		files[values.X64] = fileHeader
-	}
-	if fhs := r.MultipartForm.File["File_ARM64"]; len(fhs) > 0 {
-		fileHeader := fhs[0]
-		files[values.ARM64] = fileHeader
-	}
-	if fhs := r.MultipartForm.File["File_ARM"]; len(fhs) > 0 {
-		fileHeader := fhs[0]
-		files[values.ARM] = fileHeader
-	}
+	appendFile("File", values.NoArch, defaultKind)
+	appendFile("File_firmware", values.NoArch, values.KindFirmware)
+	appendFile("File_bootloader", values.NoArch, values.KindBootloader)
+	appendFile("File_partition", values.NoArch, values.KindPartition)
+	appendFile("File_application", values.NoArch, values.KindApplication)
+	appendFile("File_hex", values.NoArch, values.KindHex)
+	appendFile("File_rauc", values.NoArch, values.KindRAUC)
+	appendFile("File_x86", values.X86, defaultKind)
+	appendFile("File_x64", values.X64, defaultKind)
+	appendFile("File_ARM64", values.ARM64, defaultKind)
+	appendFile("File_ARM", values.ARM, defaultKind)
+	appendFile("File_Xtensa", values.Xtensa, values.KindFirmware)
+	appendFile("File_RISC-V", values.RISCV, values.KindFirmware)
 
 	if len(files) == 0 {
-		render.Status(r, http.StatusBadRequest)
+		http.Error(w, "no files uploaded", http.StatusBadRequest)
 		return
 	}
 
@@ -73,9 +76,10 @@ func (c *buildController) HandleBuildUpload(w http.ResponseWriter, r *http.Reque
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	render.Status(r, http.StatusCreated)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (c *buildController) HandleArtifactDownload(w http.ResponseWriter, r *http.Request) {
@@ -85,11 +89,14 @@ func (c *buildController) HandleArtifactDownload(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// Determine file path based on checksum
+	filename := checksum
+	if artifact, err := c.service.GetArtifactByChecksum(checksum); err == nil {
+		filename = artifact.Filename
+	}
+
 	subFolder := checksum[:2]
 	filePath := filepath.Join(storage.StorageDir, subFolder, checksum)
 
-	// Open the file for reading
 	file, err := os.Open(filePath)
 	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
@@ -97,8 +104,7 @@ func (c *buildController) HandleArtifactDownload(w http.ResponseWriter, r *http.
 	}
 	defer file.Close()
 
-	// Serve the file as a download
-	w.Header().Set("Content-Disposition", `attachment; filename="AnyDesk.exe"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	if _, err := io.Copy(w, file); err != nil {
 		http.Error(w, "Error serving file", http.StatusInternalServerError)

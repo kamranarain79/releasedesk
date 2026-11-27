@@ -29,3 +29,11 @@ type ReleaseNotesData struct {
 	Release      release.Release
 	ReleaseNotes release.ReleaseNotes
 }
+
+type TestMethodsData struct {
+	CurrentPage string
+	session.SessionData
+	session.CurrentAppData
+	Release  release.Release
+	TestPlan release.TestPlan
+}

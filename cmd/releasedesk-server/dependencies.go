@@ -5,6 +5,7 @@ import (
 	appCtrl "github.com/brewbits-co/releasedesk/internal/controllers/app"
 	authCtrl "github.com/brewbits-co/releasedesk/internal/controllers/auth"
 	buildCtrl "github.com/brewbits-co/releasedesk/internal/controllers/build"
+	"github.com/brewbits-co/releasedesk/internal/controllers/integration"
 	"github.com/brewbits-co/releasedesk/internal/controllers/misc"
 	platformCtrl "github.com/brewbits-co/releasedesk/internal/controllers/platform"
 	releaseCtrl "github.com/brewbits-co/releasedesk/internal/controllers/release"
@@ -35,6 +36,7 @@ func buildContainer() *dig.Container {
 	container.Provide(sql.NewBuildRepository)
 	container.Provide(sql.NewReleaseRepository)
 	container.Provide(sql.NewReleaseNotesRepository)
+	container.Provide(sql.NewTestMethodRepository)
 	// Services
 	container.Provide(auth.NewAuthService)
 	container.Provide(app.NewAppService)
@@ -48,6 +50,7 @@ func buildContainer() *dig.Container {
 	container.Provide(releaseCtrl.NewReleaseController)
 	container.Provide(platformCtrl.NewPlatformController)
 	container.Provide(buildCtrl.NewBuildController)
+	container.Provide(integration.NewController)
 
 	return container
 }

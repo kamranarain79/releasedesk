@@ -17,13 +17,16 @@ type Service interface {
 	GetReleaseNotes(releaseID int) (release.ReleaseNotes, error)
 	GetReleaseByID(releaseID int) (release.Release, error)
 	UpdateReleaseBasicInfo(info release.BasicInfo) (release.Release, error)
+	SaveTestPlan(releaseID int, overview string, methods []release.TestMethod) (release.TestPlan, error)
+	GetTestPlan(releaseID int) (release.TestPlan, error)
 }
 
 // NewReleaseService initializes a new instance of the release Service using the provided dependencies.
-func NewReleaseService(releaseRepo release.ReleaseRepository, releaseNotesRepo release.ReleaseNotesRepository, appRepo app.AppRepository) Service {
+func NewReleaseService(releaseRepo release.ReleaseRepository, releaseNotesRepo release.ReleaseNotesRepository, testMethodRepo release.TestMethodRepository, appRepo app.AppRepository) Service {
 	return &service{
 		releaseRepo:      releaseRepo,
 		releaseNotesRepo: releaseNotesRepo,
+		testMethodRepo:   testMethodRepo,
 		appRepo:          appRepo,
 	}
 }
@@ -31,6 +34,7 @@ func NewReleaseService(releaseRepo release.ReleaseRepository, releaseNotesRepo r
 type service struct {
 	releaseRepo      release.ReleaseRepository
 	releaseNotesRepo release.ReleaseNotesRepository
+	testMethodRepo   release.TestMethodRepository
 	appRepo          app.AppRepository
 }
 
@@ -54,4 +58,15 @@ func (s *service) GetReleaseNotes(releaseID int) (release.ReleaseNotes, error) {
 	}
 
 	return releaseNotes, nil
+}
+
+func (s *service) SaveTestPlan(releaseID int, overview string, methods []release.TestMethod) (release.TestPlan, error) {
+	if err := s.testMethodRepo.SavePlan(releaseID, overview, methods); err != nil {
+		return release.TestPlan{}, err
+	}
+	return s.testMethodRepo.GetPlan(releaseID)
+}
+
+func (s *service) GetTestPlan(releaseID int) (release.TestPlan, error) {
+	return s.testMethodRepo.GetPlan(releaseID)
 }

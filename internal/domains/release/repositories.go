@@ -21,3 +21,8 @@ type ReleaseNotesRepository interface {
 	GetByReleaseID(releaseID int) (ReleaseNotes, error)
 	FindChangelogsByReleaseID(releaseID int) ([]Changelog, error)
 }
+
+type TestMethodRepository interface {
+	SavePlan(releaseID int, overview string, methods []TestMethod) error
+	GetPlan(releaseID int) (TestPlan, error)
+}
