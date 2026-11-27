@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build console assets
+        working-directory: web
+        run: npm ci && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-assets
+          path: |
+            cmd/releasedesk-server/assets/bundle.js
+            cmd/releasedesk-server/assets/tailwind.css
+
+  go:
+    runs-on: ubuntu-latest
+    needs: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-assets
+          path: cmd/releasedesk-server/assets
+      - name: Test
+        run: CGO_ENABLED=0 go test ./...
+      - name: Build server
+        run: mkdir -p _tmp && CGO_ENABLED=0 go build -o _tmp/releasedesk-server ./cmd/releasedesk-server
+      - uses: actions/upload-artifact@v4
+        with:
+          name: releasedesk-server
+          path: _tmp/releasedesk-server
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: go
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t "releasedesk:${{ github.sha }}" .
