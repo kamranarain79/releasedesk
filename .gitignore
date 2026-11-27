@@ -80,5 +80,9 @@ web/tmp/
 *.drawio.bkp
 *.drawio.dtmp
 
-# --- Cursor ---
+# --- Local agent / editor tooling ---
 .cursor/
+.claude/
+*.bak
+*.orig
+*.rej
