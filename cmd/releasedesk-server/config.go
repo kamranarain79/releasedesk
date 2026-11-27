@@ -2,12 +2,13 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 )
 
 const (
 	defaultDataDir   = "_data"
 	defaultPortalURL = "http://localhost:9090"
+	// Local Compose publishes Postgres on this URL. Docker overrides it with the service hostname.
+	defaultDatabaseURL = "postgres://releasedesk:releasedesk@127.0.0.1:5432/releasedesk?sslmode=disable"
 )
 
 func dataDir() string {
@@ -17,8 +18,11 @@ func dataDir() string {
 	return defaultDataDir
 }
 
-func databasePath() string {
-	return filepath.Join(dataDir(), "releasedesk.db")
+func databaseURL() string {
+	if url := os.Getenv("RELEASEDESK_DATABASE_URL"); url != "" {
+		return url
+	}
+	return defaultDatabaseURL
 }
 
 func portalPublicURL() string {

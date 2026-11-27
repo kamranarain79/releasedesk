@@ -15,7 +15,7 @@ RUN go mod download
 COPY . .
 COPY --from=web /src/cmd/releasedesk-server/assets/bundle.js ./cmd/releasedesk-server/assets/bundle.js
 COPY --from=web /src/cmd/releasedesk-server/assets/tailwind.css ./cmd/releasedesk-server/assets/tailwind.css
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 RUN go build -o /out/releasedesk-server ./cmd/releasedesk-server
 
 FROM debian:bookworm-slim

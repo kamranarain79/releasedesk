@@ -39,7 +39,7 @@ func (r *ciTokenRepository) ListByApp(appID int) ([]app.CIToken, error) {
 }
 
 func (r *ciTokenRepository) Revoke(appID, id int) error {
-	result, err := r.engine.Exec("UPDATE ci_token SET revoked = 1 WHERE app_id = ? AND id = ?", appID, id)
+	result, err := r.engine.Exec("UPDATE ci_token SET revoked = TRUE WHERE app_id = ? AND id = ?", appID, id)
 	if err != nil {
 		return err
 	}

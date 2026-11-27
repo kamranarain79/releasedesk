@@ -10,8 +10,8 @@
 ## Backend
 
 - **Chi** — HTTP routing; console on `:8080`, portal on `:9090`
-- **XORM** — SQLite ORM; migrations in `cmd/releasedesk-server/migrations.go`
-- **SQLite** — `_data/releasedesk.db` (WAL)
+- **XORM** — PostgreSQL ORM; migrations in `cmd/releasedesk-server/migrations.go`
+- **PostgreSQL** — metadata. Compose starts it with the app. Artifact files stay under `RELEASEDESK_DATA_DIR`
 - **uber/dig** — dependency injection
 - **go-chi/jwtauth** — session JWT in HttpOnly cookie
 
@@ -27,7 +27,7 @@ Static files under `/assets/*` are served from **`go:embed`** in the server bina
 ## DevOps & Infrastructure
 
 - Docker & Docker Compose (`Dockerfile`, `docker-compose.yml` starts PostgreSQL with the app)
-- SQLite by default, PostgreSQL when `RELEASEDESK_DATABASE_URL` is set
+- PostgreSQL via `RELEASEDESK_DATABASE_URL` (local default is `127.0.0.1:5432`)
 - GitLab CI (`.gitlab-ci.yml`)
 - Local: [Air](https://github.com/air-verse/air) optional (`.air.toml`, dev proxy :8090)
 
