@@ -4,18 +4,15 @@ ReleaseDesk keeps **metadata** in a database and **firmware bytes** on disk. Do 
 
 ## Database
 
-| Mode | When |
-|------|------|
-| PostgreSQL | `docker compose up`. Compose starts Postgres next to the app and sets `RELEASEDESK_DATABASE_URL`. The database port is not published. |
-| SQLite file `_data/releasedesk.db` | The binary on a host, when `RELEASEDESK_DATABASE_URL` is unset. |
+Metadata is always PostgreSQL. `docker compose up` starts Postgres next to the app and sets `RELEASEDESK_DATABASE_URL` to `postgres://releasedesk:releasedesk@postgres:5432/releasedesk?sslmode=disable`. The database is also published on host port `5432` so a binary built on the host can use the same server.
 
 ```bash
 docker compose up --build
 ```
 
-Postgres is not published on the host. Only ReleaseDesk talks to it. Change the Compose password before exposing the console on a public network.
+Change the Compose password before exposing the console on a public network. Set `RELEASEDESK_DATABASE_URL` to match.
 
-Backup: `pg_dump` plus a copy of the `storage/` directory under `RELEASEDESK_DATA_DIR`. Restore both together. There is no automatic SQLite-to-Postgres copy.
+Backup: `pg_dump` plus a copy of the `storage/` directory under `RELEASEDESK_DATA_DIR`. Restore both together.
 
 ## Process
 

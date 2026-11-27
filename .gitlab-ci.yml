@@ -33,10 +33,9 @@ go_test:
     paths:
       - .cache/go
   variables:
-    CGO_ENABLED: "1"
+    CGO_ENABLED: "0"
     GOCACHE: $CI_PROJECT_DIR/.cache/go
   script:
-    - apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
     - go test ./...
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -47,9 +46,8 @@ go_build:
   image: golang:1.23-bookworm
   needs: ["web", "go_test"]
   variables:
-    CGO_ENABLED: "1"
+    CGO_ENABLED: "0"
   script:
-    - apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
     - mkdir -p _tmp
     - go build -o _tmp/releasedesk-server ./cmd/releasedesk-server
   artifacts:

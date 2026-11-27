@@ -107,12 +107,8 @@ func (c *miscController) RenderAdministration(w http.ResponseWriter, r *http.Req
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	database := "SQLite file"
-	note := "This process is using a SQLite file for metadata. Docker Compose starts PostgreSQL with the app, so metadata is not a file there. Firmware and other artifacts stay as files in the data directory either way."
-	if os.Getenv("RELEASEDESK_DATABASE_URL") != "" {
-		database = "PostgreSQL"
-		note = "PostgreSQL is running with the app. Firmware and other artifacts stay as files in the data directory."
-	}
+	database := "PostgreSQL"
+	note := "PostgreSQL stores metadata. Firmware and other artifacts stay as files in the data directory."
 	dataDir := os.Getenv("RELEASEDESK_DATA_DIR")
 	if dataDir == "" {
 		dataDir = "_data"

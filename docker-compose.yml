@@ -5,6 +5,8 @@ services:
       POSTGRES_USER: releasedesk
       POSTGRES_PASSWORD: releasedesk
       POSTGRES_DB: releasedesk
+    ports:
+      - "5432:5432"
     volumes:
       - releasedesk-pg:/var/lib/postgresql/data
     healthcheck:

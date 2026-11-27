@@ -52,8 +52,8 @@ that resolves the dependency graph.
 
 ### Database
 
-SQLite database at `_data/releasedesk.db`. Schema changes are **XORM migrations** registered in
-`cmd/releasedesk-server/migrations.go` (`xorm.io/xorm/migrate`), applied automatically on server start.
+PostgreSQL holds metadata. `docker compose up` starts it with the app. Schema changes are **XORM migrations** registered in
+`cmd/releasedesk-server/migrations.go` (`xorm.io/xorm/migrate`), applied automatically on server start. Artifact files stay in `RELEASEDESK_DATA_DIR`.
 
 ### HTTP Server
 

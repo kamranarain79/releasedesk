@@ -36,7 +36,7 @@ Share your ideas or questions on [Discussions](https://github.com/brewbits-co/re
 
 ## Local development
 
-**Docker** (pins Go 1.23 and Node 22, embeds a matching UI bundle):
+**Docker** (pins Go 1.23 and Node 22, embeds a matching UI bundle, and starts PostgreSQL with the app):
 
 ```bash
 docker compose up --build

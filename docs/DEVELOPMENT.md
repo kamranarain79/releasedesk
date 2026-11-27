@@ -26,14 +26,14 @@ docker compose up --build
 | http://localhost:8080 | Console |
 | http://localhost:9090 | Public download portal |
 
-`docker compose up --build` starts ReleaseDesk and PostgreSQL together. Metadata goes to Postgres. Firmware files stay on the `releasedesk-data` volume. Running the binary on the host, with `RELEASEDESK_DATABASE_URL` unset, still uses the SQLite file in `RELEASEDESK_DATA_DIR`. See [INFRASTRUCTURE.md](INFRASTRUCTURE.md).
+`docker compose up --build` starts ReleaseDesk and PostgreSQL together. Metadata goes to Postgres. Firmware files stay on the `releasedesk-data` volume. See [INFRASTRUCTURE.md](INFRASTRUCTURE.md).
 
 Environment:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `RELEASEDESK_DATA_DIR` | `_data` | SQLite file and artifact storage |
-| `RELEASEDESK_DATABASE_URL` | unset on the host; set by Compose | `postgres://...` uses PostgreSQL. Unset keeps the SQLite file |
+| `RELEASEDESK_DATA_DIR` | `_data` | Artifact files (firmware, branding). Metadata is not stored here |
+| `RELEASEDESK_DATABASE_URL` | `postgres://releasedesk:releasedesk@127.0.0.1:5432/releasedesk?sslmode=disable` | PostgreSQL connection. Compose sets this to the `postgres` service |
 | `RELEASEDESK_PORTAL_URL` | `http://localhost:9090` | URL shown in the console Download Portal page |
 | `RELEASEDESK_API_TOKEN` | unset | Optional extra global token. The instance token is generated on first start and shown under Administration |
 | `RELEASEDESK_JWT_SECRET` | `secret` outside production | Required non-default value when `RELEASEDESK_ENV=production` |
@@ -41,6 +41,8 @@ Environment:
 | `RELEASEDESK_MAX_UPLOAD_MB` | `512` | Multipart upload cap |
 
 ## First-time setup (host toolchain)
+
+PostgreSQL must be listening before the binary starts. `make run` starts the Compose Postgres service, then the server.
 
 ```bash
 make build
@@ -55,6 +57,7 @@ npm install
 npm run build
 
 cd ..
+docker compose up -d postgres
 go build -o ./_tmp/releasedesk-server ./cmd/releasedesk-server
 mkdir -p _data
 ./_tmp/releasedesk-server
@@ -123,7 +126,7 @@ internal/controllers/       HTTP handlers + view data
 internal/persistence/sql/   XORM repositories
 internal/views/             gohtml templates (embedded)
 web/                        Lit + TypeScript + Tailwind
-_data/releasedesk.db        SQLite (runtime, gitignored)
+_data/                      artifact files (runtime, gitignored)
 ```
 
 Two HTTP servers in one process: console `:8080`, portal `:9090`.
