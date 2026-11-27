@@ -18,4 +18,4 @@ curl -fsS -H "Authorization: Bearer $RELEASEDESK_APP_TOKEN" \
 
 Or list files (Filebrowser-style `items`) and copy them into Filebrowser. Teams receives a card; a Teams outage does not fail the job.
 
-This repository's own pipeline is [.gitlab-ci.yml](../.gitlab-ci.yml) (web, Go test, image build). It does not deploy automatically.
+This repository's own pipelines are [.github/workflows/ci.yml](../.github/workflows/ci.yml) on GitHub and [.gitlab-ci.yml](../.gitlab-ci.yml) (web assets, Go test and build with `CGO_ENABLED=0`, image build). They do not deploy automatically.
